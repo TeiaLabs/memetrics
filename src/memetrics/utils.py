@@ -22,3 +22,14 @@ class DB:
         if url:
             return MongoClient(url)
         return cls.client
+
+
+def create_timeseries_collection(db_name: str, collection_name: str):
+    DB.get(db_name).create_collection(
+        collection_name,
+        timeseries={
+            "timeField": "created_at",
+            "metaField": "data",
+            "granularity": "seconds",
+        },
+    )

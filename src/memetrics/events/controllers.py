@@ -1,4 +1,3 @@
-from bson import ObjectId
 from fastapi import BackgroundTasks
 from tauth.schemas import Creator
 
@@ -13,8 +12,6 @@ def create_one(
     obj = EventData(
         created_by=created_by,
         data=body,
-        id=ObjectId(),
-        type="user-action",
     )
     background_tasks.add_task(db["events"].insert_one, obj.dict())
     return {"_id": obj.id}

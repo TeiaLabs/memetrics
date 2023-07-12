@@ -11,3 +11,7 @@ class Settings(BaseSettings):
     # mongodb
     MEME_MONGODB_DBNAME: str = "memetrics"
     MEME_MONGODB_URI: str = "mongodb://localhost:27017"
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
