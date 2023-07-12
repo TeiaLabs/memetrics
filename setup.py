@@ -39,7 +39,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/TeiaLabs/memetrics",
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "src"},
     python_requires=">=3.11",
     install_requires=requirements,
 )
