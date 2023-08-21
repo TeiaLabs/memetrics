@@ -6,12 +6,11 @@ from tauth.schemas import Creator
 
 
 class EventData(BaseModel):
-    type: str  # code-completion.requested
+    action: str  # requested
+    actor: str  # user
     app: str  # vscode.extension.wingman
-    subject: str  # user
-    action: str  # accepted
-    object: str  # suggestion
     extra: dict[str, str]  # {"suggestion_id": "123"}
+    type: str  # code-completion.requested
 
 
 class Event(BaseModel):

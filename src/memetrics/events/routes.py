@@ -7,20 +7,11 @@ from .schemas import EventData, GeneratedFields
 router = APIRouter()
 examples = [
     {
-        "type": "user-action",
-        "app": "vscode.wingman.code-completion",
-        "subject": "user",
-        "action": "accepted",
-        "object": "suggestion",
-        "extra": {"suggestion_id": "123"},
-    },
-    {
-        "type": "user-action",
-        "app": "vscode.wingman.datasources",
-        "subject": "user",
         "action": "requested",
-        "object": "indexing",
-        "extra": {"indexing_id": "123"},
+        "actor": "user",
+        "app": "vscode.extension.wingman",
+        "extra": {"suggestion_id": "123"},
+        "type": "code.completion",
     },
 ]
 
