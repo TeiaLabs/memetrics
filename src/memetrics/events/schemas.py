@@ -6,8 +6,8 @@ from tauth.schemas import Creator
 
 
 class EventData(BaseModel):
-    type: str  # user-action
-    app: str  # vscode.wingman.code-completion
+    type: str  # code-completion.requested
+    app: str  # vscode.extension.wingman
     subject: str  # user
     action: str  # accepted
     object: str  # suggestion
@@ -21,5 +21,7 @@ class Event(BaseModel):
     id: str = Field(default_factory=lambda: str(ObjectId()), alias="_id")  # TODO: don't cast to str
 
 
-class Identifier(BaseModel):
+class GeneratedFields(BaseModel):
     id: str = Field(..., alias="_id")
+    created_at: datetime
+    created_by: Creator

@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Request, Body
 from fastapi import status as s
 
 from . import controllers
-from .schemas import EventData, Identifier
+from .schemas import EventData, GeneratedFields
 
 router = APIRouter()
 examples = [
@@ -30,6 +30,6 @@ async def create_one(
     request: Request,
     background_tasks: BackgroundTasks,
     body: EventData = Body(examples=examples),
-) -> Identifier:  # TODO return all fields
+) -> GeneratedFields:
     # TODO: switch_db
     return controllers.create_one(background_tasks, body, request.state.creator)
