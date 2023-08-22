@@ -1,16 +1,23 @@
 from datetime import datetime
+from typing import TypedDict, Required
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
 from tauth.schemas import Creator
 
 
+class Actor(TypedDict, total=False):
+    email: Required[str]
+    extra: dict[str, str]
+    ip: str
+
+
 class EventData(BaseModel):
-    action: str  # requested
-    actor: str  # user
-    app: str  # vscode.extension.wingman
-    extra: dict[str, str]  # {"suggestion_id": "123"}
-    type: str  # code-completion.requested
+    action: str
+    actor: Actor
+    app: str
+    extra: dict[str, str]
+    type: str
 
 
 class Event(BaseModel):

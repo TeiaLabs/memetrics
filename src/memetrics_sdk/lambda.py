@@ -23,4 +23,4 @@ headers = {
 
 response = requests.request("POST", url, headers=headers, data=payload)
 
-print(response.text)
+print(response.text)  # '{ "insertedId": "63dc56ac74ddb86ed3eb8474" }'

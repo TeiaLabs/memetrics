@@ -1,12 +1,13 @@
-from typing import Literal
+from typing import Any, Literal
 import os
 
 import httpx
 
 
 class LambdaClient:
-    def __init__(self) -> None:
+    def __init__(self):
         self.api_key = os.environ["MONGODB_API_KEY"]
+        self.cluster_name = os.environ["MONGODB_CLUSTER"]
         self.url = os.environ["MONGODB_URL"]
         self.headers = {
             "Content-Type": "application/json",
@@ -14,15 +15,18 @@ class LambdaClient:
             "api-key": self.api_key,
         }
 
-    def insert_one(self, document: dict) -> None:
+    def insert_one(self, document: dict[str, Any], db_name: str = "memetrics") -> str:
+        url = f"{self.url}/insertOne"
         payload = {
-            "collection": "searchresult",
-            "database": "datasources-osf",
-            "dataSource": "wingman-prod",
+            "collection": "events",
+            "database": db_name,
+            "dataSource": self.cluster_name,
             "document": document,
         }
         with httpx.Client() as client:
-            client.post(self.url, headers=self.headers, json=payload)
+            res = client.post(url, headers=self.headers, json=payload)
+        res_json = res.json()
+        return res_json["insertedId"]
 
 
 class Memetrics:
@@ -31,7 +35,13 @@ class Memetrics:
 
     backend: lambda or microservice.
     """
-    def __init__(self, backend: Literal["lambda", "microservice"] = "lambda"):
+    def __init__(self, backend: Literal["lambda", "microservice"]):
         self.backend = backend
         if self.backend == "lambda":
             self.client = LambdaClient()
+        elif self.backend == "microservice":
+            raise NotImplementedError("Microservice backend not implemented yet.")
+        else:
+            raise ValueError("backend must be lambda or microservice")
+
+    # def track(self, )

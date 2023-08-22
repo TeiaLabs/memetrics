@@ -8,8 +8,8 @@ router = APIRouter()
 examples = [
     {
         "action": "requested",
-        "actor": "user",
-        "app": "vscode.extension.wingman",
+        "actor": {"id": "123", "email": "user@mail.com"},
+        "app": "vscode.extension.OSFDigital.wingman",
         "extra": {"suggestion_id": "123"},
         "type": "code.completion",
     },

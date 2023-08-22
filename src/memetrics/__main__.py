@@ -8,6 +8,7 @@ def main():
     uvicorn.run(
         app="memetrics.app:create_app",
         factory=True,
+        forwarded_allow_ips="*",
         host=settings.MEME_HOST,
         port=settings.MEME_PORT,
         reload=settings.MEME_RELOAD,
