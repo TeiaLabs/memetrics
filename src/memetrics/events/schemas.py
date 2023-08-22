@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TypedDict, Required
+from typing import Any, TypedDict, Required
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -8,7 +8,7 @@ from tauth.schemas import Creator
 
 class Actor(TypedDict, total=False):
     email: Required[str]
-    extra: dict[str, str]
+    extra: dict[str, Any]
     ip: str
 
 
@@ -16,7 +16,7 @@ class EventData(BaseModel):
     action: str
     actor: Actor
     app: str
-    extra: dict[str, str]
+    extra: dict[str, Any]
     type: str
 
 
