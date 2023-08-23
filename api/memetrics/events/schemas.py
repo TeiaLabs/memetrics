@@ -16,7 +16,7 @@ class EventData(BaseModel):
     action: str
     actor: Actor
     app: str
-    extra: dict[str, Any]
+    extra: dict[str, Any] = Field(default_factory=dict)
     type: str
 
 
