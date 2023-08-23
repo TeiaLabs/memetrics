@@ -1,5 +1,5 @@
-from typing import Any, Literal
 import os
+from typing import Any, Literal
 
 import httpx
 
@@ -35,6 +35,7 @@ class Memetrics:
 
     backend: lambda or microservice.
     """
+
     def __init__(self, backend: Literal["lambda", "microservice"]):
         self.backend = backend
         if self.backend == "lambda":

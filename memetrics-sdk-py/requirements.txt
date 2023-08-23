@@ -1,0 +1,4 @@
+bson
+fastapi
+pydantic[dotenv]<2
+httpx
