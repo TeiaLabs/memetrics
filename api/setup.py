@@ -15,6 +15,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 requirements = read_multiline_as_list("requirements.txt")
+teia_requirements = read_multiline_as_list("requirements-teia.txt")
 
 setuptools.setup(
     name="memetrics",
@@ -34,4 +35,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires=">=3.11",
     install_requires=requirements,
+    extra_require={"teia": teia_requirements},
 )
