@@ -1,5 +1,6 @@
 import { EventData, EventDataPayload } from "./schemas";
 import { trimEnd } from "./utils";
+import fetch from "node-fetch";
 
 export class Client {
     private static apiKey: string;
