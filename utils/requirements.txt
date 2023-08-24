@@ -1,0 +1,6 @@
+bson
+fastapi
+pymongo
+uvicorn
+pydantic[dotenv]<2
+
