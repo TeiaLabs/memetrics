@@ -2,10 +2,10 @@ import { EventData } from "./schemas";
 import { trimEnd } from "./utils";
 
 export class Client {
-    private apiKey: string;
-    private apiUrl: string;
+    private static apiKey: string;
+    private static apiUrl: string;
 
-    constructor(
+    static setup(
         apiKey: string | undefined = process.env["MEMETRICS_API_KEY"],
         apiUrl: string | undefined = process.env["MEMETRICS_URL"]
     ) {
@@ -16,7 +16,7 @@ export class Client {
         this.apiUrl = `${trimEnd(apiUrl, "/")}/events`;
     }
 
-    saveEvent(event: EventData): Promise<void> {
+    static saveEvent(event: EventData): Promise<void> {
         return fetch(this.apiUrl, {
             method: "POST",
             headers: {
@@ -28,7 +28,7 @@ export class Client {
         }) as Promise<any> as Promise<void>;
     }
 
-    saveBatch(events: EventData[]): Promise<void> {
+    static saveBatch(events: EventData[]): Promise<void> {
         const promises = events.map((event) => {
             return this.saveEvent(event);
         });
