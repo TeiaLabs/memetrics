@@ -28,6 +28,7 @@
     },
     "dependencies": {
         "@types/node": "^20.5.3",
-        "@types/node-fetch": "^2.6.4"
+        "@types/node-fetch": "^2.6.4",
+        "node-fetch": "^3.3.2"
     }
 }
