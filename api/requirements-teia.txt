@@ -1,1 +1,2 @@
 tauth[teia] @ git+ssh://git@github.com/TeiaLabs/melting-face.git@master#subdirectory=tauth
+memetrics_utils[teia] @ git+ssh://git@github.com/TeiaLabs/memetrics.git@master#subdirectory=utils

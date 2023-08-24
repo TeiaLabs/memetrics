@@ -1,8 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, Request, Body
+from fastapi import APIRouter, BackgroundTasks, Body, Request
 from fastapi import status as s
+from memetrics_utils import GeneratedFields
 
 from . import controllers
-from .schemas import EventData, GeneratedFields
+from .schemas import EventIn
 
 router = APIRouter()
 examples = [
@@ -12,6 +13,7 @@ examples = [
         "app": "vscode.extension.OSFDigital.wingman",
         "extra": {"suggestion_id": "123"},
         "type": "code.completion",
+        "_id": "64e7c43b9192c0f134769e23"
     },
 ]
 
@@ -20,7 +22,7 @@ examples = [
 async def create_one(
     request: Request,
     background_tasks: BackgroundTasks,
-    body: EventData = Body(examples=examples),
+    body: EventIn = Body(examples=examples),
 ) -> GeneratedFields:
     # TODO: switch_db
     return controllers.create_one(background_tasks, body, request.state.creator)
