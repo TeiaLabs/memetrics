@@ -1,11 +1,13 @@
-import { EventData } from "./schemas";
+import { EventData, EventDataPayload } from "./schemas";
 import { trimEnd } from "./utils";
 
 export class Client {
     private static apiKey: string;
     private static apiUrl: string;
+    private static appName: string;
 
     static setup(
+        appName: string,
         apiKey: string | undefined = process.env["MEMETRICS_API_KEY"],
         apiUrl: string | undefined = process.env["MEMETRICS_URL"]
     ) {
@@ -14,9 +16,14 @@ export class Client {
 
         if (apiUrl === undefined) throw Error("MeMetrics URL not found.");
         this.apiUrl = `${trimEnd(apiUrl, "/")}/events`;
+
+        this.appName = appName;
     }
 
     static saveEvent(event: EventData): Promise<void> {
+        let payload = event as any as EventDataPayload;
+        payload.app = this.appName;
+
         return fetch(this.apiUrl, {
             method: "POST",
             headers: {
@@ -24,7 +31,7 @@ export class Client {
                 Authentication: this.apiKey,
                 "X-User-Email": event["actor"]["email"],
             },
-            body: JSON.stringify(event),
+            body: JSON.stringify(payload),
         }) as Promise<any> as Promise<void>;
     }
 

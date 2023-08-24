@@ -7,7 +7,10 @@ export interface Actor {
 export interface EventData {
     action: string;
     actor: Actor;
-    app: string;
     extra?: { [key: string]: any };
     type: string;
+}
+
+export interface EventDataPayload extends EventData {
+    app: string
 }
