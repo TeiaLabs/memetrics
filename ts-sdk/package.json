@@ -27,9 +27,9 @@
     "devDependencies": {
         "typescript": "^5.1.6",
         "@types/node": "^20.5.3",
-        "@types/node-fetch": "^2.6.4"
+        "@types/node-fetch": "2.6.x"
     },
     "dependencies": {
-        "node-fetch": "^3.3.2"
+        "node-fetch": "2.6.x"
     }
 }
