@@ -27,6 +27,7 @@ class Event(BaseModel):
     id: str = Field(
         default_factory=lambda: str(ObjectId()), alias="_id"
     )  # TODO: don't cast to str
+    parent_id: str | None = None
 
 
 class GeneratedFields(BaseModel):
