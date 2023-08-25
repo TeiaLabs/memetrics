@@ -1,6 +1,6 @@
 import { EventData, EventDataPayload } from "./schemas";
 import { trimEnd } from "./utils";
-import fetch from "node-fetch";
+import axios from "axios";
 
 export class Client {
     private static apiKey: string;
@@ -25,14 +25,12 @@ export class Client {
         let payload = event as any as EventDataPayload;
         payload.app = this.appName;
 
-        return fetch(this.apiUrl, {
-            method: "POST",
+        return axios.post(this.apiUrl, payload, {
             headers: {
                 "Content-Type": "application/json",
                 Authentication: this.apiKey,
                 "X-User-Email": event["actor"]["email"],
             },
-            body: JSON.stringify(payload),
         }) as Promise<any> as Promise<void>;
     }
 
