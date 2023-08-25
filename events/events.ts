@@ -10,28 +10,28 @@
 const b = [
     { // chat-athena {client_name: "/teialabs/athena/web", token_name: "chat-athena.prod"}
         action: "new-chat.button.click",
-        actor: {email: "user@org.com"},
+        user: {email: "user@org.com"},
         app: "web.osf.chat-wingman",
         extra: {user_agent: "firefox-116"},
         type: "chat.landing-page.sidebar",
     },
     { // chat-athena {client_name: "/teialabs/athena/web", token_name: "chat-athena.prod"}
         action: "send-message.button.click",
-        actor: {email: "user@org.com"},
+        user: {email: "user@org.com"},
         app: "web.osf.chat-wingman",
         extra: {user_agent: "firefox-116"},
         type: "chat.thread",
     },
     { // chat-athena {client_name: "/teialabs/athena/web", token_name: "chat-athena.prod"}
         action: "chatbot.request",
-        actor: {email: "user@org.com"},
+        user: {email: "user@org.com"},
         app: "web.osf.chat-wingman",
         extra: {user_agent: "firefox-116"},
         type: "chat.thread",
     },
     { // athena-api {client_name: "/teialabs/athena", token_name: "athena.prod"}
         action: "create_one",
-        actor: {
+        user: {
             email: "user@org.com", extras: {
                 creator: {client_name: "/teialabs/athena/web", token_name: "chat-athena.prod"}
             }
@@ -41,7 +41,7 @@ const b = [
     },
     { // melting-face {client_name: "/teialabs/melt", token_name: "meltingface.prod"}
         action: "stream_one",
-        actor: {email: "user@org.com", extras: {creator: {client_name: "/teialabs/athena", token_name: "athena.prod"}}},
+        user: {email: "user@org.com", extras: {creator: {client_name: "/teialabs/athena", token_name: "athena.prod"}}},
         app: "webservice.teia.melting-face",
         type: "chat-completions",
     }
