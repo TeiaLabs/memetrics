@@ -7,11 +7,18 @@ from .schemas import EventData, GeneratedFields
 router = APIRouter()
 examples = [
     {
-        "action": "requested",
-        "actor": {"id": "123", "email": "user@mail.com"},
+        "action": "request.ctrl+enter",
+        "actor": {"email": "user@org.com", "ip": "200.0.0.42", "extras": {"auth0_id": "123"}},
         "app": "vscode.extension.OSFDigital.wingman",
-        "extra": {"suggestion_id": "123"},
+        "extra": {"text_completion_id": "123", "vscode_version": "1.0.1"},
         "type": "code.completion",
+    },
+    {
+        "action": "copy.code-block",
+        "actor": {"email": "user@org.com", "ip": "200.0.0.42", "extra": {"azure_id": "123"}},
+        "app": "web.osf.chat-wingman",
+        "extra": {"message_id": "123", "user_agent": "firefox-116"},
+        "type": "chat.thread",
     },
 ]
 
@@ -22,5 +29,4 @@ async def create_one(
     background_tasks: BackgroundTasks,
     body: EventData = Body(examples=examples),
 ) -> GeneratedFields:
-    # TODO: switch_db
     return controllers.create_one(background_tasks, body, request.state.creator)

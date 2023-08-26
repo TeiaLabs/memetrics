@@ -4,11 +4,12 @@ Mongo-backed metrics mate for Metabase measures and metadata monitoring.
 
 Pronounced muh-MEH-tricks.
 
-## dev setup
+## api dev setup
 
 ```bash
+cd api
 pip install -e .
-cp example.env .env
-# env vars
+cp .env.example .env
+# edit env vars
 python -m memetrics
 ```
