@@ -1,12 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM python:3.11 as base
 
-RUN mkdir -p -m 0600 /root/.ssh && \
-    ssh-keyscan -H github.com >> /root/.ssh/known_hosts
-
 RUN apt-get update && apt-get -y upgrade && \
     apt-get -y install build-essential
-
 
 WORKDIR /app
 COPY . .
