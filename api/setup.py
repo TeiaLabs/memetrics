@@ -35,5 +35,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires=">=3.11",
     install_requires=requirements,
-    extra_require={"teia": teia_requirements},
+    extras_require={"teia": teia_requirements},
 )
