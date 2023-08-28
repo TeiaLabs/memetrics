@@ -1,0 +1,45 @@
+name: prod-deploy
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: us-east-1
+
+  ECS_CLUSTER: default
+  ECS_SERVICE: memetrics-prod-server
+  REPOSITORY: 306094223949.dkr.ecr.us-east-1.amazonaws.com/memetrics-prod
+  BETA_IMAGE_TAG: beta
+  PRODUCTION_IMAGE_TAG: latest
+
+jobs:
+  build:
+    name: Deploy production image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_DEFAULT_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Pull latest beta image
+        run: docker pull ${{ env.REPOSITORY }}:${{ env.BETA_IMAGE_TAG }}
+
+      - name: Tag as latest production image
+        run: docker tag ${{ env.REPOSITORY }}:${{ env.BETA_IMAGE_TAG }} ${{ env.REPOSITORY }}:${{ env.PRODUCTION_IMAGE_TAG }}
+      
+      - name: Push to ECR
+        run: docker push ${{ env.REPOSITORY }}:${{ env.PRODUCTION_IMAGE_TAG }}
+      
+      - name: Deploy on ECS
+        run: aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
