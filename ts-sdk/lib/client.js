@@ -7,17 +7,18 @@ exports.Client = void 0;
 const utils_1 = require("./utils");
 const axios_1 = __importDefault(require("axios"));
 class Client {
-    static apiKey;
     static apiUrl;
     static appName;
     static setup(appName, apiKey = process.env["MEMETRICS_API_KEY"], apiUrl = process.env["MEMETRICS_URL"]) {
         if (apiKey === undefined)
             throw Error("API Key not found.");
-        this.apiKey = apiKey;
+        apiKey = `Bearer ${(0, utils_1.stripStart)(apiKey, "Bearer ")}`;
         if (apiUrl === undefined)
             throw Error("MeMetrics URL not found.");
-        this.apiUrl = `${(0, utils_1.trimEnd)(apiUrl, "/")}/events`;
+        this.apiUrl = `${(0, utils_1.stripEnd)(apiUrl, "/")}/events`;
         this.appName = appName;
+        axios_1.default.defaults.headers.common["Content-Type"] = "application/json";
+        axios_1.default.defaults.headers.common["Authorization"] = apiKey;
     }
     static async saveEvent(event) {
         let payload = event;
@@ -25,8 +26,6 @@ class Client {
         try {
             await axios_1.default.post(this.apiUrl, payload, {
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: this.apiKey,
                     "X-User-Email": event["actor"]["email"],
                 },
             });

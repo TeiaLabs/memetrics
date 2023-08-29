@@ -1,9 +1,8 @@
 import { EventData, EventDataPayload, Error } from "./schemas";
-import { trimEnd } from "./utils";
+import { stripStart, stripEnd } from "./utils";
 import axios, { AxiosError } from "axios";
 
 export class Client {
-    private static apiKey: string;
     private static apiUrl: string;
     private static appName: string;
 
@@ -13,12 +12,15 @@ export class Client {
         apiUrl: string | undefined = process.env["MEMETRICS_URL"]
     ) {
         if (apiKey === undefined) throw Error("API Key not found.");
-        this.apiKey = apiKey;
+        apiKey = `Bearer ${stripStart(apiKey, "Bearer ")}`;
 
         if (apiUrl === undefined) throw Error("MeMetrics URL not found.");
-        this.apiUrl = `${trimEnd(apiUrl, "/")}/events`;
+        this.apiUrl = `${stripEnd(apiUrl, "/")}/events`;
 
         this.appName = appName;
+
+        axios.defaults.headers.common["Content-Type"] = "application/json";
+        axios.defaults.headers.common["Authorization"] = apiKey;
     }
 
     static async saveEvent(event: EventData): Promise<void | Error> {
@@ -28,8 +30,6 @@ export class Client {
         try {
             await axios.post(this.apiUrl, payload, {
                 headers: {
-                    "Content-Type": "application/json",
-                    Authorization: this.apiKey,
                     "X-User-Email": event["actor"]["email"],
                 },
             });
