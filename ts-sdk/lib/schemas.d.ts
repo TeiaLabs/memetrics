@@ -16,3 +16,8 @@ export interface EventData {
 export interface EventDataPayload extends EventData {
     app: string;
 }
+export interface Error {
+    status: number;
+    message: string;
+    extra?: any;
+}

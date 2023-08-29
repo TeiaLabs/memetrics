@@ -1,6 +1,6 @@
-import { EventData, EventDataPayload } from "./schemas";
+import { EventData, EventDataPayload, Error } from "./schemas";
 import { trimEnd } from "./utils";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 export class Client {
     private static apiKey: string;
@@ -21,23 +21,38 @@ export class Client {
         this.appName = appName;
     }
 
-    static saveEvent(event: EventData): Promise<void> {
+    static async saveEvent(event: EventData): Promise<void | Error> {
         let payload = event as any as EventDataPayload;
         payload.app = this.appName;
 
-        return axios.post(this.apiUrl, payload, {
-            headers: {
-                "Content-Type": "application/json",
-                Authentication: this.apiKey,
-                "X-User-Email": event["actor"]["email"],
-            },
-        }) as Promise<any> as Promise<void>;
+        try {
+            await axios.post(this.apiUrl, payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: this.apiKey,
+                    "X-User-Email": event["actor"]["email"],
+                },
+            });
+        } catch (e: any) {
+            const error = e as AxiosError;
+            let status, message, extra;
+            if (error.response) {
+                status = error.response.status;
+                message = `MeMetrics API responded with ${error.response.status} ${error.response.statusText}`;
+                extra = error.response.data;
+            } else {
+                status = 500;
+                message = `MeMetrics API responded with ${error.message}`;
+            }
+
+            return { status, message, extra } as Error;
+        }
     }
 
-    static saveBatch(events: EventData[]): Promise<void> {
+    static saveBatch(events: EventData[]): Promise<(void | Error)[]> {
         const promises = events.map((event) => {
             return this.saveEvent(event);
         });
-        return Promise.all(promises) as Promise<any> as Promise<void>;
+        return Promise.all(promises);
     }
 }

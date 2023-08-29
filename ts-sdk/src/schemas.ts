@@ -1,7 +1,7 @@
 export interface Actor {
     email: string;
     extra?: { [key: string]: any };
-    ip?: string
+    ip?: string;
 }
 
 export interface EventData {
@@ -12,5 +12,11 @@ export interface EventData {
 }
 
 export interface EventDataPayload extends EventData {
-    app: string
+    app: string;
+}
+
+export interface Error {
+    status: number;
+    message: string;
+    extra?: any;
 }

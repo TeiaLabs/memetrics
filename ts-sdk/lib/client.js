@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Client = void 0;
 const utils_1 = require("./utils");
-const node_fetch_1 = __importDefault(require("node-fetch"));
+const axios_1 = __importDefault(require("axios"));
 class Client {
     static apiKey;
     static apiUrl;
@@ -19,18 +19,32 @@ class Client {
         this.apiUrl = `${(0, utils_1.trimEnd)(apiUrl, "/")}/events`;
         this.appName = appName;
     }
-    static saveEvent(event) {
+    static async saveEvent(event) {
         let payload = event;
         payload.app = this.appName;
-        return (0, node_fetch_1.default)(this.apiUrl, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authentication: this.apiKey,
-                "X-User-Email": event["actor"]["email"],
-            },
-            body: JSON.stringify(payload),
-        });
+        try {
+            await axios_1.default.post(this.apiUrl, payload, {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: this.apiKey,
+                    "X-User-Email": event["actor"]["email"],
+                },
+            });
+        }
+        catch (e) {
+            const error = e;
+            let status, message, extra;
+            if (error.response) {
+                status = error.response.status;
+                message = `MeMetrics API responded with ${error.response.status} ${error.response.statusText}`;
+                extra = error.response.data;
+            }
+            else {
+                status = 500;
+                message = `MeMetrics API responded with ${error.message}`;
+            }
+            return { status, message, extra };
+        }
     }
     static saveBatch(events) {
         const promises = events.map((event) => {
