@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Required, TypedDict
+from typing import Any, Literal, Required, TypedDict
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -33,3 +33,8 @@ class GeneratedFields(BaseModel):
     id: str = Field(..., alias="_id")
     created_at: datetime
     created_by: Creator
+
+
+class PatchEventData(BaseModel):
+    op: Literal["add"]
+    value: EventData
