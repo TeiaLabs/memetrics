@@ -1,24 +1,24 @@
 from datetime import datetime
-from typing import Any, Literal, Required, TypedDict
+from typing import Any, Literal, TypedDict
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
 from tauth.schemas import Creator
 
 
-class Actor(TypedDict, total=False):
-    email: Required[str]
-    extra: dict[str, Any]
-    ip: str
+class Attribute(BaseModel):
+    name: str
+    type: Literal["string", "integer"] = "string"
+    value: str
 
 
 class EventData(BaseModel):
     action: str
-    actor: Actor
     app: str
     app_version: str
     extra: dict[str, Any] = Field(default_factory=dict)
     type: str
+    user: Attribute
 
 
 class Event(BaseModel):

@@ -7,26 +7,37 @@ from .schemas import EventData, GeneratedFields, PatchEventData
 router = APIRouter()
 examples = [
     {
-        "action": "request.ctrl+enter",
-        "actor": {
-            "email": "user@org.com",
-            "ip": "200.0.0.42",
-            "extras": {"auth0_id": "123"},
+        "action": "request",
+        "app": "/osf/vscode/extension/OSFDigital.wingman",
+        "extra": {
+            "suggestion_id": "123",
+            "extension_version": "1.2.1",
+            "vscode_version": "1.2.3",
         },
-        "app": "vscode.extension.OSFDigital.wingman",
-        "extra": {"text_completion_id": "123", "vscode_version": "1.0.1"},
         "type": "code.completion",
+        "user": {
+            "id": {
+                "name": "email",
+                "value": "user@org.com"
+            },
+            "extra": [
+                {
+                    "name": "auth0-id",
+                    "value": "123",
+                },
+            ],
+        },
     },
     {
-        "action": "copy.code-block",
-        "actor": {
+        "action": "copy",
+        "app": "/osf/web/chat-wingman",
+        "extra": {"message_id": "123", "user_agent": "firefox-116"},
+        "type": "chat.thread.message.code-block",
+        "user": {
             "email": "user@org.com",
             "ip": "200.0.0.42",
             "extra": {"azure_id": "123"},
         },
-        "app": "web.osf.chat-wingman",
-        "extra": {"message_id": "123", "user_agent": "firefox-116"},
-        "type": "chat.thread",
     },
 ]
 
