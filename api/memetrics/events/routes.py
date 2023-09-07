@@ -5,41 +5,6 @@ from . import controllers
 from .schemas import EventData, GeneratedFields, PatchEventData
 
 router = APIRouter()
-examples = [
-    {
-        "action": "request",
-        "app": "/osf/vscode/extension/OSFDigital.wingman",
-        "extra": {
-            "suggestion_id": "123",
-            "extension_version": "1.2.1",
-            "vscode_version": "1.2.3",
-        },
-        "type": "code.completion",
-        "user": {
-            "id": {
-                "name": "email",
-                "value": "user@org.com"
-            },
-            "extra": [
-                {
-                    "name": "auth0-id",
-                    "value": "123",
-                },
-            ],
-        },
-    },
-    {
-        "action": "copy",
-        "app": "/osf/web/chat-wingman",
-        "extra": {"message_id": "123", "user_agent": "firefox-116"},
-        "type": "chat.thread.message.code-block",
-        "user": {
-            "email": "user@org.com",
-            "ip": "200.0.0.42",
-            "extra": {"azure_id": "123"},
-        },
-    },
-]
 
 patch_examples = [
     [
@@ -79,7 +44,7 @@ patch_examples = [
 async def create_one(
     request: Request,
     background_tasks: BackgroundTasks,
-    body: EventData = Body(examples=examples),
+    body: EventData = Body(examples=EventData.Config.examples),
 ) -> GeneratedFields:
     return controllers.create_one(background_tasks, body, request.state.creator)
 
