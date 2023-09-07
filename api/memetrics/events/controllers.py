@@ -4,6 +4,7 @@ from tauth.schemas import Creator
 from .. import utils
 from ..utils import DB
 from .schemas import Event, EventData, GeneratedFields, PatchEventData
+from .models import EventsPerUser, EventsPerApp
 
 
 def create_one(
@@ -15,6 +16,7 @@ def create_one(
         data=body,
     )
     background_tasks.add_task(db["events"].insert_one, obj.dict())
+    background_tasks.add_task(EventsPerUser.increment_from_event, obj, db)
     return GeneratedFields(**obj.dict(by_alias=True))
 
 
