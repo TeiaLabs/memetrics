@@ -91,3 +91,22 @@ class GeneratedFields(BaseModel):
 class PatchEventData(BaseModel):
     op: Literal["add"]
     value: EventData
+
+    class Config:
+        examples = {
+            "Add a single resource.": {
+                "value": [
+                    [
+                        {
+                            "op": "add",
+                            "value": {
+                                "action": "verb.specifying.what.the.user.did",
+                                "app": "/org/namespace/app-name",
+                                "type": "location.where.event.was.triggered.in.app",
+                                "user": {"email": "user@org.com"},
+                            },
+                        },
+                    ]
+                ]
+            }
+        }
