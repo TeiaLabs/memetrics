@@ -7,6 +7,7 @@ export interface Actor {
 }
 export interface EventData {
     action: string;
+    app_version: string;
     actor: Actor;
     extra?: {
         [key: string]: any;
