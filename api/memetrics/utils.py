@@ -27,17 +27,6 @@ class DB:
         return cls.client
 
 
-def create_timeseries_collection(db_name: str, collection_name: str):
-    DB.get(db_name).create_collection(
-        collection_name,
-        timeseries={
-            "timeField": "created_at",
-            "metaField": "data",
-            "granularity": "seconds",
-        },
-    )
-
-
 def get_root_dir(path: str) -> Optional[str]:
     """
     Get the root folder name from a path-like string.
