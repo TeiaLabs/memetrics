@@ -1,4 +1,4 @@
 import { Client } from "./client";
-import { User, EventData, Error } from "./schemas";
+import { User, EventData, Error, Attribute } from "./schemas";
 
-export { User, Client, EventData, Error };
+export { User, Client, EventData, Error, Attribute };
