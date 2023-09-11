@@ -23,7 +23,7 @@ class WebserviceClient:
         response = self.http_client.post(
             relative_url,
             headers=cast(dict[str, str], headers),
-            json=document,
+            data=document.json(),
         )
         response.raise_for_status()
         return response.json()
