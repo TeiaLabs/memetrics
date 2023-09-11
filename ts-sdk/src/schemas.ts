@@ -1,7 +1,7 @@
 export interface Attribute {
     name: string;
-    type: "string" | "integer";
-    value: any;
+    type: "string" | "integer" | "float" | "dict" | "list";
+    value: string | number | {[key: string]: Attribute} | Attribute[];
 }
 
 export interface User {
