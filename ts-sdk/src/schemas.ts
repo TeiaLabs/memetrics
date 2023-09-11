@@ -1,7 +1,7 @@
 export interface Attribute {
     name: string;
     type: "string" | "integer";
-    value: string;
+    value: any;
 }
 
 export interface User {

@@ -11,7 +11,7 @@ from ..utils import PyObjectId
 class Attribute(BaseModel):
     name: str
     type: Literal["string", "integer"] = "string"
-    value: str
+    value: Any
 
 
 class User(TypedDict, total=False):
