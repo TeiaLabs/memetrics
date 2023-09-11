@@ -1,3 +1,3 @@
 import { Client } from "./client";
-import { Actor, EventData, Error } from "./schemas";
-export { Actor, Client, EventData, Error };
+import { User, EventData, Error } from "./schemas";
+export { User, Client, EventData, Error };

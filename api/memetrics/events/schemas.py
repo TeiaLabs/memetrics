@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal, TypedDict, Required
+from typing import Any, Literal, TypedDict
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -24,7 +24,7 @@ class EventData(BaseModel):
     action: str
     app: str
     app_version: str
-    extra: dict[str, Any] = Field(default_factory=dict)
+    extra: list[Attribute] = Field(default_factory=list)
     type: str  # location in app/feature name
     user: User
 

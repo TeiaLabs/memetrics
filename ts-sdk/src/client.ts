@@ -30,7 +30,7 @@ export class Client {
         try {
             await axios.post(this.apiUrl, payload, {
                 headers: {
-                    "X-User-Email": event["actor"]["email"],
+                    "X-User-Email": event["user"]["email"],
                 },
             });
         } catch (e: any) {

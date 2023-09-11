@@ -26,7 +26,7 @@ class Client {
         try {
             await axios_1.default.post(this.apiUrl, payload, {
                 headers: {
-                    "X-User-Email": event["actor"]["email"],
+                    "X-User-Email": event["user"]["email"],
                 },
             });
         }
