@@ -8,7 +8,7 @@ from memetrics.events.models import EventsPerUser
 router = APIRouter(tags=["eggregator"])
 
 
-@router.get("/eggs/count-by-user")
+@router.get("/eggregations/count-by-user")
 async def read_many(
     request: Request,
     groupby: Literal["day", "month", "quarter", "year"] = Query("day", alias="$groupby"),
