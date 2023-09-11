@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 
 from bson import ObjectId
 from pydantic import BaseModel
@@ -18,13 +18,12 @@ class EventsPerUser(BaseModel):
 
     @classmethod
     def increment_from_event(cls, event, db: Database):
-        obj = cls(**event.data.dict(by_alias=True))
         filters = {
-            "action": obj.action,
-            "app": obj.app,
-            "type": obj.type,
-            "user_email": obj.user_email,
-            "date": obj.date,
+            "action": event.data.action,
+            "app": event.data.app,
+            "type": event.data.type,
+            "user_email": event.data.user["email"],
+            "date": datetime.combine(event.created_at.date(), time.min),
         }
         res = db["events_per_user"].find_one_and_update(
             filter=filters,

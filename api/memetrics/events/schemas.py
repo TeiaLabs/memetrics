@@ -5,6 +5,8 @@ from bson import ObjectId
 from pydantic import BaseModel, Field
 from tauth.schemas import Creator
 
+from ..utils import PyObjectId
+
 
 class Attribute(BaseModel):
     name: str
@@ -32,6 +34,7 @@ class EventData(BaseModel):
                 "value": {
                     "action": "verb.specifying.what.the.user.did",
                     "app": "/org/namespace/app-name",
+                    "app_version": "1.2.3",
                     "type": "location.where.event.was.triggered.in.app",
                     "user": {"email": "user@org.com"},
                 }
@@ -40,6 +43,7 @@ class EventData(BaseModel):
                 "value": {
                     "action": "request",
                     "app": "/osf/vscode-extension/OSFDigital.wingman",
+                    "app_version": "1.2.3",
                     "extra": {
                         "suggestion_id": "123",
                         "extension_version": "1.2.1",
@@ -58,6 +62,7 @@ class EventData(BaseModel):
                 "value": {
                     "action": "copy",
                     "app": "/osf/web/chat-wingman",
+                    "app_version": "1.2.3",
                     "extra": {"message_id": "123", "user_agent": "firefox-116"},
                     "type": "chat.thread.message.code-block",
                     "user": {
@@ -76,16 +81,27 @@ class Event(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Creator
     data: EventData
-    id: str = Field(
-        default_factory=lambda: str(ObjectId()), alias="_id"
-    )  # TODO: don't cast to str
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     schema_version: int = Field(default=1)
+
+    def bson(self) -> dict[str, Any]:
+        obj = self.dict(by_alias=True)
+        obj["_id"] = ObjectId(obj["_id"])
+        return obj
+
+    class Config:
+        allow_population_by_field_name = True
+        json_encoders = {PyObjectId: lambda x: {"$oid": str(x)}}
 
 
 class GeneratedFields(BaseModel):
-    id: str = Field(..., alias="_id")
+    id: PyObjectId = Field(..., alias="_id")
     created_at: datetime
     created_by: Creator
+
+    class Config:
+        allow_mutation = False
+        json_encoders = {PyObjectId: str}
 
 
 class PatchEventData(BaseModel):

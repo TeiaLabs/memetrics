@@ -15,7 +15,8 @@ def create_one(
         created_by=created_by,
         data=body,
     )
-    background_tasks.add_task(db["events"].insert_one, obj.dict())
+    print(obj.bson())
+    background_tasks.add_task(db["events"].insert_one, obj.bson())
     background_tasks.add_task(EventsPerUser.increment_from_event, obj, db)
     return GeneratedFields(**obj.dict(by_alias=True))
 
