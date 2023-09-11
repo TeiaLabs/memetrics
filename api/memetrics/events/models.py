@@ -1,9 +1,11 @@
 from datetime import date
+
 from bson import ObjectId
+from pydantic import BaseModel
 from pymongo.database import Database
 
 
-class EventsPerUser:
+class EventsPerUser(BaseModel):
     _id: ObjectId
     # event
     action: str  # send-message

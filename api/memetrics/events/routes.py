@@ -4,7 +4,7 @@ from fastapi import status as s
 from . import controllers
 from .schemas import EventData, GeneratedFields, PatchEventData
 
-router = APIRouter()
+router = APIRouter(tags=["events"])
 
 
 @router.post("/events", status_code=s.HTTP_201_CREATED)

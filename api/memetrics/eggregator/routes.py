@@ -5,10 +5,10 @@ from pymongo.cursor import Cursor
 
 from memetrics.events.models import EventsPerUser
 
-router = APIRouter()
+router = APIRouter(tags=["eggregator"])
 
 
-@router.get("/metrics/count-by-user")
+@router.get("/eggs/count-by-user")
 async def read_many(
     request: Request,
     groupby: Literal["day", "month", "quarter", "year"] = Query("day", alias="$groupby"),
