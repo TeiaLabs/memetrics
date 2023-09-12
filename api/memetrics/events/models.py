@@ -37,11 +37,7 @@ class EventsPerUser(BaseModel):
             update={
                 "$inc": {"count": 1},
                 "$push": {
-                    "events": {
-                        "$each": [
-                            {"event_id": event.id, "event_creation": event.created_at}
-                        ]
-                    }
+                    "events": {"event_id": event.id, "event_creation": event.created_at}
                 },
             },
             upsert=True,
