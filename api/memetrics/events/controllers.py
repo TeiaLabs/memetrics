@@ -43,6 +43,6 @@ def create_many(
 
     db = DB.get()
     res = db["events"].insert_many(objs)
-    for obj in objs:
-        EventsPerUser.increment_from_event(obj, db)
+    for event_data in body:
+        EventsPerUser.increment_from_event(event_data.value, db)
     return fields
