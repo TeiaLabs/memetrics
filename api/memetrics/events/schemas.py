@@ -44,18 +44,11 @@ class EventData(BaseModel):
                     "action": "request",
                     "app": "/osf/vscode-extension/OSFDigital.wingman",
                     "app_version": "1.2.3",
-                    "extra": {
-                        "suggestion_id": "123",
-                        "extension_version": "1.2.1",
-                        "vscode_version": "1.2.3",
-                    },
+                    "extra": [
+                        {"name": "completion-id", "type": "string", "value": "123"},
+                        {"name": "vscode_version", "type": "string", "value": "1.2.3"},
+                    ],
                     "type": "code.completion",
-                    "user": {
-                        "extra": [
-                            {"name": "auth0-id", "value": "123"},
-                        ],
-                        "id": "123",
-                    },
                 },
             },
             "Chat-athena: copy code": {
