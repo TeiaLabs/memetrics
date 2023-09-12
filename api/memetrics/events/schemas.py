@@ -42,7 +42,7 @@ class EventData(BaseModel):
             "VSCode wingman: request completion": {
                 "value": {
                     "action": "request",
-                    "app": "/osf/vscode-extension/OSFDigital.wingman",
+                    "app": "/osf/allai/vscode/OSFDigital.wingman",
                     "app_version": "1.2.3",
                     "extra": [
                         {"name": "completion-id", "type": "string", "value": "123"},
@@ -50,6 +50,7 @@ class EventData(BaseModel):
                     ],
                     "type": "code.completion",
                 },
+                "user": {"extra": [{"name": "ip", "value": "200.0.0.42"}]},
             },
             "Chat-athena: copy code": {
                 "value": {
