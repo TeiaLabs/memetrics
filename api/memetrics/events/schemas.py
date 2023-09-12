@@ -45,8 +45,8 @@ class EventData(BaseModel):
                     "app": "/osf/allai/vscode/OSFDigital.wingman",
                     "app_version": "1.2.3",
                     "extra": [
-                        {"name": "completion-id", "type": "string", "value": "123"},
-                        {"name": "vscode_version", "type": "string", "value": "1.2.3"},
+                        {"name": "completion-id", "value": "123"},
+                        {"name": "vscode-version", "value": "1.2.3"},
                     ],
                     "type": "code.completion",
                 },
@@ -57,7 +57,10 @@ class EventData(BaseModel):
                     "action": "copy",
                     "app": "/osf/web/chat-wingman",
                     "app_version": "1.2.3",
-                    "extra": {"message_id": "123", "user_agent": "firefox-116"},
+                    "extra": [
+                        {"name": "message-id", "value": "123"},
+                        {"name": "user-agent", "value": "firefox-116"},
+                    ],
                     "type": "chat.thread.message.code-block",
                     "user": {
                         "email": "user@org.com",
