@@ -10,7 +10,7 @@ from .models import EventsPerUser, EventsPerApp
 def create_one(
     background_tasks: BackgroundTasks, body: EventData, created_by: Creator
 ) -> GeneratedFields:
-    db = DB.get(suffix=utils.get_root_dir(created_by.client_name))
+    db = DB.get()
     obj = Event(
         created_by=created_by,
         data=body,
@@ -42,7 +42,6 @@ def create_many(
                 created_by=obj.created_by,
             )
         )
-
     db = DB.get()
     res = db["events"].insert_many(dict_objs)
     for obj in objs:
