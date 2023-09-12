@@ -16,7 +16,7 @@ async def create_one(
     return controllers.create_one(background_tasks, body, request.state.creator)
 
 
-@router.patch("/events", status_code=s.HTTP_202_ACCEPTED)
+@router.patch("/events", status_code=s.HTTP_207_MULTI_STATUS)
 async def create_many(
     request: Request,
     background_tasks: BackgroundTasks,

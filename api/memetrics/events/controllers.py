@@ -15,7 +15,6 @@ def create_one(
         created_by=created_by,
         data=body,
     )
-    print(obj.bson())
     background_tasks.add_task(db["events"].insert_one, obj.bson())
     background_tasks.add_task(EventsPerUser.increment_from_event, obj, db)
     return GeneratedFields(**obj.dict(by_alias=True))
@@ -38,11 +37,12 @@ def create_many(
             GeneratedFields(
                 _id=obj.id,
                 created_at=obj.created_at,
-                created_by=created_by,
+                created_by=obj.created_by,
             )
         )
 
-    db = DB.get(suffix=utils.get_root_dir(created_by.client_name))
-    background_tasks.add_task(db["events"].insert_many, objs)
-
+    db = DB.get()
+    res = db["events"].insert_many(objs)
+    for obj in objs:
+        EventsPerUser.increment_from_event(obj, db)
     return fields

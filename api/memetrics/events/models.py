@@ -2,7 +2,6 @@ from datetime import date, datetime, time
 
 from pydantic import BaseModel
 from pymongo.database import Database
-
 from ..utils import PyObjectId
 
 
