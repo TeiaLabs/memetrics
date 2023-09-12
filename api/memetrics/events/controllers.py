@@ -26,13 +26,15 @@ def create_many(
     created_by: Creator,
 ) -> list[GeneratedFields]:
     fields = []
+    dict_objs = []
     objs = []
     for event_data in body:
         obj = Event(
             created_by=created_by,
             data=event_data.value,
         )
-        objs.append(obj.dict())
+        objs.append(obj)
+        dict_objs.append(obj.dict())
         fields.append(
             GeneratedFields(
                 _id=obj.id,
@@ -42,7 +44,7 @@ def create_many(
         )
 
     db = DB.get()
-    res = db["events"].insert_many(objs)
-    for event_data in body:
-        EventsPerUser.increment_from_event(event_data.value, db)
+    res = db["events"].insert_many(dict_objs)
+    for obj in objs:
+        EventsPerUser.increment_from_event(obj, db)
     return fields
