@@ -10,8 +10,8 @@ from ..utils import PyObjectId
 
 class Attribute(BaseModel):
     name: str
-    type: Literal["string", "integer", "float", "dict", "list"] = "string"
-    value: str | int | float | dict[str, "Attribute"] | list["Attribute"]
+    type: Literal["string", "integer", "float", "dict", "list"]
+    value: str | int | float | dict | list
 
 
 class User(TypedDict, total=False):
