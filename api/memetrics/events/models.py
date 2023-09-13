@@ -6,6 +6,7 @@ from pymongo.database import Database
 from .schemas import Event
 from ..utils import PyObjectId
 
+
 class SourceRefs(BaseModel):
     event_id: PyObjectId
     event_creation: datetime
@@ -20,8 +21,8 @@ class EventsPerUser(BaseModel):
     user_email: str
     # aggregation
     count: int
-    date: date | str  # 2020-01-01
-    events: Optional[list[SourceRefs]] = None
+    date: date  # 2020-01-01
+    events: Optional[list[SourceRefs]] = None  # events are discarded in aggregations
 
     @classmethod
     def increment_from_event(cls, event: Event, db: Database):

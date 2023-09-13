@@ -11,7 +11,6 @@ router = APIRouter(tags=["eggregator"])
 
 @router.get("/eggregations/count-by-user")
 async def read_many(
-    request: Request,
     action: Optional[str] = Query(None),
     app_startswith: Optional[str] = Query(None, alias="app:startswith"),
     date_gte: str = Query("2021-01-01", alias="date:gte"),
@@ -27,10 +26,9 @@ async def read_many(
     def parse_sort(sort: str) -> list[tuple[str, int]]:
         return [(field_order[:1], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
 
-    sort = parse_sort(sort)
+    sort_tuples = parse_sort(sort)
 
     cursor = controllers.read_many(
-        user_email=user_email,
         action=action,
         app_startswith=app_startswith,
         date_gte=date_gte,
@@ -38,9 +36,9 @@ async def read_many(
         groupby=groupby,
         limit=limit,
         offset=offset,
-        sort=sort,
+        sort=sort_tuples,
         type=type,
+        user_email=user_email,
     )
-
-    return [EventsPerUser(**dict(x)) for x in cursor]
-
+    items = list(cursor)
+    return items

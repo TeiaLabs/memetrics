@@ -1,24 +1,24 @@
-from typing import Optional, Literal
+from typing import Any, Literal, Optional
+
 from pymongo.database import Database
 
 from ..utils import DB
 
 
 def read_many(
-    user_email: list[str],
-    action: Optional[str] = (None),
-    app_startswith: Optional[str] = None,
-    date_gte: str = None,
-    date_lt: str = None,
-    groupby: Literal["day", "month", "quarter", "year"] = "day",
-    limit: int = 10,
-    offset: int = 0,
-    sort: tuple = ("date", -1),
-    type: Optional[str] = None,
+    action: Optional[str],
+    app_startswith: Optional[str],
+    date_gte: str,
+    date_lt: str,
+    groupby: Literal["day", "month", "quarter", "year"],
+    limit: int,
+    offset: int,
+    sort: list[tuple[str, int]],
+    type: Optional[str],
+    user_email: Optional[list[str]],
 ):
     db = DB.get()
-
-    filters = {"user_email": {"$in": user_email}}
+    filters: dict[str, Any] = {}
     if action is not None:
         filters["action"] = action
     if app_startswith is not None:
@@ -30,6 +30,8 @@ def read_many(
         filters["date"] |= {"$lt": datetime.fromisoformat(date_lt)}
     if type is not None:
         filters["type"] = type
+    if user_email is not None:
+        filters["user_email"] = {"$in": user_email}
 
     if groupby == "day":
         ret = db["events_per_user"].find(filters, {"_id": 0})
@@ -45,52 +47,30 @@ def read_many(
 def aggregate_events_per_user(
     db: Database,
     filters: dict,
-    groupby: Literal["month", "year"],
-    limit: int = 10,
-    offset: int = 0,
-    sort: list[tuple] = [("date", -1)],
+    date_granularity: Literal["day", "month", "quarter", "year"],
+    limit: int,
+    offset: int,
+    sort: list[tuple[str, int]],
 ):
-
-    base_group_by = {
+    groupby = {
         "$group": {
             "_id": {
                 "user_email": "$user_email",
                 "action": "$action",
                 "app": "$app",
-                "date": "$date",
+                "date": {
+                    "$dateTrunc": {
+                        "date": "$date",
+                        "unit": date_granularity,
+                    },
+                },
                 "type": "$type",
             },
             "count": {"$sum": "$count"},
         }
     }
 
-    if groupby == "month":
-        groupby_stage = {
-            **base_group_by,
-            "$group": {
-                **base_group_by["$group"],
-                "_id": {
-                    **base_group_by["$group"]["_id"],
-                    "date": {"$dateToString": {"format": "%Y-%m", "date": "$date"}},
-                },
-            },
-        }
-
-    elif groupby == "year":
-        groupby_stage = {
-            **base_group_by,
-            "$group": {
-                **base_group_by["$group"],
-                "_id": {
-                    **base_group_by["$group"]["_id"],
-                    "date": {"$dateToString": {"format": "%Y-", "date": "$date"}},
-                },
-            },
-        }
-
     match = {"$match": filters}
-    groupby = groupby_stage
-    # keep all fields and make sure date is compatbiel with "date"
     project = {
         "$project": {
             "_id": 0,
@@ -102,12 +82,11 @@ def aggregate_events_per_user(
             "count": 1,
         }
     }
-
-    sort = {"$sort": dict(sort)}
-    limit = {"$limit": limit}
+    sort_stage = {"$sort": dict(sort)}
+    limit_stage = {"$limit": limit}
     skip = {"$skip": offset}
 
-    pipeline = [match, groupby, project, sort, limit, skip]
+    pipeline = [match, groupby, project, sort_stage, limit_stage, skip]
 
     ret = db["events_per_user"].aggregate(pipeline)
     return ret
