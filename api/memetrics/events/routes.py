@@ -1,8 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks, Body, Request
+from typing import Literal, Optional
+
+from fastapi import APIRouter, BackgroundTasks, Body, Query, Request
 from fastapi import status as s
 
 from . import controllers
-from .schemas import EventData, GeneratedFields, PatchEventData
+from .helpers import help_user_edge_cases
+from .schemas import EventData, GeneratedFields, PatchEventData, Event
 
 router = APIRouter(tags=["events"])
 
@@ -13,6 +16,7 @@ async def create_one(
     background_tasks: BackgroundTasks,
     body: EventData = Body(examples=EventData.Config.examples),
 ) -> GeneratedFields:
+    body = help_user_edge_cases(body, request.state.creator)
     return controllers.create_one(background_tasks, body, request.state.creator)
 
 
