@@ -27,3 +27,19 @@ async def create_many(
     body: list[PatchEventData] = Body(examples=PatchEventData.Config.examples),
 ) -> list[GeneratedFields]:
     return controllers.create_many(background_tasks, body, request.state.creator)
+
+
+@router.get("/events", status_code=s.HTTP_200_OK)
+async def read_many(
+    action: Optional[str] = Query(None),
+    app: Optional[str] = Query(None),
+    type: Optional[str] = Query(None),
+    user_email: Optional[list[str]] = Query(None, alias="user.email"),
+) -> list[Event]:
+    filters = {
+        "action": action,
+        "app": app,
+        "type": type,
+        "user.email": user_email,
+    }
+    return controllers.read_many(**filters)

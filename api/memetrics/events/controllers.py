@@ -47,3 +47,10 @@ def create_many(
     for obj in objs:
         EventsPerUser.increment_from_event(obj, db)
     return fields
+
+
+def read_many(**filters) -> list[Event]:
+    filters = {k: v for k, v in filters.items() if v is not None}
+    db = DB.get()
+    cursor = db["events"].find(filters)
+    return list(cursor.limit(10))
