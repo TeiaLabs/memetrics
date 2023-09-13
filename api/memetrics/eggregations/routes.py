@@ -4,6 +4,7 @@ from fastapi import APIRouter, Request, Query
 from pymongo.cursor import Cursor
 
 from memetrics.events.models import EventsPerUser
+from . import controllers
 
 router = APIRouter(tags=["eggregator"])
 
@@ -22,22 +23,24 @@ async def read_many(
     type: Optional[str] = Query(None),
     user_email: Optional[list[str]] = Query(None),
 ) -> list[EventsPerUser]:
-    if groupby != "day":
-        raise NotImplementedError("Needs aggregation.")
-    query: dict[str, Any] = {"$gte": date_gte, "$lt": date_lt}
-    if action:
-        query["action"] = action
-    if app_startswith:
-        query["app"] = {"$regex": f"^{app_startswith}"}
-    if type:
-        query["type"] = type
-    if user_email:
-        query["user_email"] = {"$in": user_email}
 
     def parse_sort(sort: str) -> list[tuple[str, int]]:
         return [(field_order[:1], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
-    sort = parse_sort(sort)
-    def paginate(cursor: Cursor) -> Cursor:
-        return cursor.sort(sort).skip(offset).limit(limit)
 
-    return []
+    sort = parse_sort(sort)
+
+    cursor = controllers.read_many(
+        user_email=user_email,
+        action=action,
+        app_startswith=app_startswith,
+        date_gte=date_gte,
+        date_lt=date_lt,
+        groupby=groupby,
+        limit=limit,
+        offset=offset,
+        sort=sort,
+        type=type,
+    )
+
+    return [EventsPerUser(**dict(x)) for x in cursor]
+

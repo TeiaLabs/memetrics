@@ -1,5 +1,5 @@
+from typing import Optional
 from datetime import date, datetime, time
-
 from pydantic import BaseModel
 from pymongo.database import Database
 
@@ -20,8 +20,8 @@ class EventsPerUser(BaseModel):
     user_email: str
     # aggregation
     count: int
-    date: date  # 2020-01-01
-    events: list[SourceRefs]
+    date: date | str  # 2020-01-01
+    events: Optional[list[SourceRefs]] = None
 
     @classmethod
     def increment_from_event(cls, event: Event, db: Database):
