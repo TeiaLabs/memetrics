@@ -29,7 +29,7 @@ class WebserviceClient:
         response = self.http_client.post(
             relative_url,
             headers=cast(dict[str, str], headers),
-            data=document.json(),
+            json=document,
         )
         response.raise_for_status()
         return response.json()
@@ -72,13 +72,17 @@ class EggregatorClient:
     def read_count_by_user(
         self,
         user_email: list[str],
-        action: str = None, app: str = None,
-        date_gte: datetime = None, date_lt: datetime = None,
-        groupby: str = "day", limit: int = 10, offset: int = 0,
-        sort: str = "-count", type: str = None,
-        headers: Optional[TAuthHeaders] = None
+        action: str = None,
+        app: str = None,
+        date_gte: datetime = None,
+        date_lt: datetime = None,
+        groupby: str = "day",
+        limit: int = 10,
+        offset: int = 0,
+        sort: str = "-count",
+        type: str = None,
+        headers: Optional[TAuthHeaders] = None,
     ) -> EventData:
-
         relative_url = "/eggregations/count-by-user"
 
         params = {
