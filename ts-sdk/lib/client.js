@@ -21,7 +21,7 @@ class Client {
         axios_1.default.defaults.headers.common["Authorization"] = apiKey;
     }
     static async saveEvent(event) {
-        let payload = event;
+        const payload = event;
         payload.app = this.appName;
         try {
             await axios_1.default.post(this.apiUrl, payload, {
@@ -45,11 +45,37 @@ class Client {
             return { status, message, extra };
         }
     }
-    static saveBatch(events) {
-        const promises = events.map((event) => {
-            return this.saveEvent(event);
-        });
-        return Promise.all(promises);
+    static async saveBatch(events) {
+        const userEmail = events[0].user.email;
+        const payload = [];
+        for (const event of events) {
+            event.app = this.appName;
+            payload.push({
+                op: "add",
+                value: event,
+            });
+        }
+        try {
+            await axios_1.default.post(this.apiUrl, payload, {
+                headers: {
+                    "X-User-Email": userEmail,
+                },
+            });
+        }
+        catch (e) {
+            const error = e;
+            let status, message, extra;
+            if (error.response) {
+                status = error.response.status;
+                message = `MeMetrics API responded with ${error.response.status} ${error.response.statusText}`;
+                extra = error.response.data;
+            }
+            else {
+                status = 500;
+                message = `MeMetrics API responded with ${error.message}`;
+            }
+            return { status, message, extra };
+        }
     }
 }
 exports.Client = Client;
