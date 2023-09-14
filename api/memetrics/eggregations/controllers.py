@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Any, Literal, Optional
 
 from pymongo.database import Database
@@ -24,7 +25,6 @@ def read_many(
     if app_startswith is not None:
         filters["app"] = {"$regex": f"^{app_startswith}"}
     if date_gte is not None:
-        from datetime import datetime
         filters["date"] = {"$gte": datetime.fromisoformat(date_gte)}
     if date_lt is not None:
         filters["date"] |= {"$lt": datetime.fromisoformat(date_lt)}
