@@ -24,7 +24,7 @@ async def read_many(
 ) -> list[EventsPerUser]:
 
     def parse_sort(sort: str) -> list[tuple[str, int]]:
-        return [(field_order[:1], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
+        return [(field_order[1:], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
 
     sort_tuples = parse_sort(sort)
 
