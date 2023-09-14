@@ -24,7 +24,7 @@ export class Client {
     }
 
     static async saveEvent(event: EventData): Promise<void | Error> {
-        let payload = event as any as EventDataPayload;
+        const payload = event as any as EventDataPayload;
         payload.app = this.appName;
 
         try {
@@ -49,10 +49,35 @@ export class Client {
         }
     }
 
-    static saveBatch(events: EventData[]): Promise<(void | Error)[]> {
-        const promises = events.map((event) => {
-            return this.saveEvent(event);
-        });
-        return Promise.all(promises);
+    static async saveBatch(events: EventData[]): Promise<void | Error> {
+        const userEmail = events[0].user.email;
+        const payload = [];
+        for (const event of events) {
+            (event as any).app = this.appName;
+            payload.push({
+                op: "add",
+                value: event,
+            });
+        }
+        try {
+            await axios.post(this.apiUrl, payload, {
+                headers: {
+                    "X-User-Email": userEmail,
+                },
+            });
+        } catch (e: any) {
+            const error = e as AxiosError;
+            let status, message, extra;
+            if (error.response) {
+                status = error.response.status;
+                message = `MeMetrics API responded with ${error.response.status} ${error.response.statusText}`;
+                extra = error.response.data;
+            } else {
+                status = 500;
+                message = `MeMetrics API responded with ${error.message}`;
+            }
+
+            return { status, message, extra } as Error;
+        }
     }
 }
