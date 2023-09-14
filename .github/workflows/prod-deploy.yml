@@ -3,17 +3,19 @@ name: prod-deploy
 on:
   push:
     tags: ["v*.*.*"]
+    branches: [prod-deploy]
   workflow_dispatch:
 
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
-
+  SOURCE_REPOSITORY: 306094223949.dkr.ecr.us-east-1.amazonaws.com/memetrics
+  BETA_IMAGE_TAG: beta
+  TARGET_REPOSITORY: 306094223949.dkr.ecr.us-east-1.amazonaws.com/memetrics-prod
+  PRODUCTION_IMAGE_TAG: latest
   ECS_CLUSTER: default
-  ECS_SERVICE: memetrics-prod-server
-  REPOSITORY: 306094223949.dkr.ecr.us-east-1.amazonaws.com/memetrics-prod
-  IMAGE_TAG: latest
+  ECS_SERVICE: memetrics-prod
 
 jobs:
   build:
@@ -27,21 +29,13 @@ jobs:
           aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
-
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
-      
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-
-      - name: Build and push to ECR
-        uses: docker/build-push-action@v4
-        with:
-          context: ./api
-          file: ./api/Dockerfile
-          push: true
-          target: run
-          tags: "${{ env.REPOSITORY }}:${{ env.IMAGE_TAG }}"
-      
+      - name: Pull latest beta image
+        run: docker pull ${{ env.SOURCE_REPOSITORY }}:${{ env.BETA_IMAGE_TAG }}
+      - name: Tag as latest production image
+        run: docker tag ${{ env.SOURCE_REPOSITORY }}:${{ env.BETA_IMAGE_TAG }} ${{ env.TARGET_REPOSITORY }}:${{ env.PRODUCTION_IMAGE_TAG }}
+      - name: Push to ECR
+        run: docker push ${{ env.TARGET_REPOSITORY }}:${{ env.PRODUCTION_IMAGE_TAG }}
       - name: Deploy on ECS
         run: aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
