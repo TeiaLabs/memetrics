@@ -1,76 +1,152 @@
 #%%
 import json
-
-
-def load_jsonl(filepath):
-    events = []
-    with open(filepath, 'r') as f:
-        for line in f:
-            events.append(json.loads(line))
-    return events
-
-data = load_jsonl("/home/jonatas/repos/memetrics/migrations/wingman_export.jsonl")
-# %%
+from typing import Type
 import pandas as pd
-# %%
+from badger_api import Settings
+from redb.core.base import BaseDocument
+from redb.core.instance import RedB, MongoConfig
 
-df = pd.DataFrame(data)
-# %%
-df.columns
-
-# %%
-#%%
-
-
-print(df.event.unique())
-
-# out
-#%%
 from memetrics.events.schemas import Creator, Event, EventData, User, Attribute
 from memetrics_sdk.client import WebserviceClient
 
-client = WebserviceClient()
+from redb.core import Document
+
+RedB.setup(
+    backend="mongo",
+    config=MongoConfig(
+    # database_uri=None, # SET this !!
+    default_database="memetrics-dev"
+))
+
+
+def load_jsonl(filepath):
+    with open(filepath, 'r') as f:
+        for line in f:
+            yield json.loads(line)
+
+data = load_jsonl("/home/jonatas/repos/memetrics/migrations/dump_cosmos_2_client.jsonl")
+
+# out
+#%%
+
+# client = WebserviceClient()
 #%%
 app = "/osf/allai_code/vscode/OSFDigital.allai"
 
+"""
+['client:chat.requested'
+ 'client:completion.displayed'
+ 'client:chat.displayed'
+ 'client:explanation.requested'
+ 'client:docstring.requested'
+ 'client:completion.requested'
+ 'client:completion.accepted'
+ 'client:docstring.displayed'
+ 'client:unit_tests.requested'
+ 'client:unit_tests.displayed'
+ 'client:explanation.displayed'
+ 'client:bug_fix.requested'
+ 'client:optimization.displayed'
+ 'client:optimization.requested'
+ 'client:chat.failed'
+ 'client:optimization.failed'
+ 'client:completion.failed']
+"""
+
 mapping = {
-    "client:completion.accepted": {
-        "type": "code.completion",
-        "action": "accept",
-    },
     "client:chat.requested": {
-        "type": "chat.message",
+        "type": "chat",
         "action": "request",
     },
-    "client:explanation.displayed": {
-        "type": "code.explanation",
+    "client:completion.displayed": {
+        "type": "completion",
         "action": "display",
     },
-    "client:bug_fix.requested": {
-        "type": "code.bug_fix",
+    "client:chat.displayed": {
+        "type": "chat",
+        "action": "display",
+    },
+    "client:explanation.requested": {
+        "type": "explanation",
+        "action": "request",
+    },
+    "client:docstring.requested": {
+        "type": "docstring",
+        "action": "request",
+    },
+    "client:completion.requested": {
+        "type": "completion",
+        "action": "request",
+    },
+    "client:completion.accepted": {
+        "type": "completion",
+        "action": "accept",
+    },
+    "client:docstring.displayed": {
+        "type": "docstring",
+        "action": "display",
+    },
+    "client:unit_tests.requested": {
+        "type": "unit_tests",
         "action": "request",
     },
     "client:unit_tests.displayed": {
-        'type': 'code.unit_tests',
-        'action': 'display',
+        "type": "unit_tests",
+        "action": "display",
     },
-    "client:docstring.displayed": {
-        "type": "code.docstring",
-        "action":  "display",
-    }
+    "client:explanation.displayed": {
+        "type": "explanation",
+        "action": "display",
+    },
+    "client:bug_fix.requested": {
+        "type": "bug_fix",
+        "action": "request",
+    },
+    "client:optimization.displayed": {
+        "type": "optimization",
+        "action": "display",
+    },
+    "client:optimization.requested": {
+        "type": "optimization",
+        "action": "request",
+    },
+    "client:chat.failed": {
+        "type": "chat",
+        "action": "fail",
+    },
+    "client:optimization.failed": {
+        "type": "optimization",
+        "action": "fail",
+    },
+    "client:completion.failed": {
+        "type": "completion",
+        "action": "fail",
+    },
 }
+
+#%%
+
 from tqdm import tqdm
 from datetime import datetime
 
-batch_size = 128
+class EventsDAO(Document, Event):
+    @classmethod
+    def collection_name(cls: type[BaseDocument]) -> str:
+        return "events"
+
+client = EventsDAO._get_driver_collection(EventsDAO)
+
+batch_size = 2048
 batch = []
 
 for event in tqdm(data):
+
     creator = Creator(
-        client_name="",
-        token_name="",
+        client_name='/teialabs/melt',
+        token_name="jonatas.workstation",
         user_email=event["user_email"],
     )
+
     type_action = mapping[event["event"]]
     event_creation_date = datetime.fromtimestamp(event["ts"])
 
@@ -103,9 +179,10 @@ for event in tqdm(data):
             ),
         )
     )
-    batch.append(memetrics_event.data)
+    batch.append(memetrics_event.bson())
 
     if len(batch) == batch_size:
+
         r = client.insert_many(documents=batch)
         tqdm.write(f"{r}")
         batch = []
