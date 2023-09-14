@@ -10,7 +10,7 @@ settings = Settings()
 
 
 class DB:
-    client = MongoClient(settings.MEME_MONGODB_URI)
+    client = MongoClient(settings.MEME_MONGODB_URI, fsync=True)
 
     @classmethod
     def get(cls, db_name: Optional[str] = None, suffix: Optional[str] = None) -> Database:

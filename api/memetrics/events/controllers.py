@@ -3,8 +3,8 @@ from tauth.schemas import Creator
 
 from .. import utils
 from ..utils import DB
+from .models import EventsPerApp, EventsPerUser
 from .schemas import Event, EventData, GeneratedFields, PatchEventData
-from .models import EventsPerUser, EventsPerApp
 
 
 def create_one(
@@ -44,8 +44,7 @@ def create_many(
         )
     db = DB.get()
     res = db["events"].insert_many(dict_objs)
-    for obj in objs:
-        EventsPerUser.increment_from_event(obj, db)
+    EventsPerUser.bulk_increment_from_events(objs, db)
     return fields
 
 

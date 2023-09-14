@@ -1,10 +1,12 @@
-from typing import Optional
 from datetime import date, datetime, time
+from typing import Optional
+
 from pydantic import BaseModel
+from pymongo import operations as pymongo_operations
 from pymongo.database import Database
 
-from .schemas import Event
 from ..utils import PyObjectId
+from .schemas import Event
 
 
 class SourceRefs(BaseModel):
@@ -43,6 +45,43 @@ class EventsPerUser(BaseModel):
             },
             upsert=True,
         )
+
+    @classmethod
+    def bulk_increment_from_events(cls, events: list[Event], db: Database):
+        """
+        SAFETY: write operations (e.g. update) will block operations until committed
+        to journal as per configuration on the client (fsync = True) which will ensure
+        the order of execution of different operations.
+        Note that write operations are atomic by default at the document level as per documentation
+        https://www.mongodb.com/docs/manual/core/write-operations-atomicity/.
+        """
+        operations = []
+        for event in events:
+            filters = {
+                "action": event.data.action,
+                "app": event.data.app,
+                "type": event.data.type,
+                "user_email": event.data.user.get("email"),
+                "date": datetime.combine(event.created_at.date(), time.min),
+            }
+            update = {
+                "$inc": {"count": 1},
+                "$push": {
+                    "events": {
+                        "event_id": event.id,
+                        "event_creation": event.created_at,
+                    }
+                },
+            }
+            operations.append(
+                pymongo_operations.UpdateOne(
+                    filter=filters,
+                    update=update,
+                    upsert=True,
+                )
+            )
+
+        _ = db["events_per_user"].bulk_write(operations, ordered=False)
 
 
 class EventsPerApp:
