@@ -6,6 +6,7 @@ from fastapi import status as s
 from . import controllers
 from .helpers import help_user_edge_cases
 from .schemas import EventData, GeneratedFields, PatchEventData, Event
+from ..utils import PyObjectId
 
 router = APIRouter(tags=["events"])
 
@@ -33,10 +34,12 @@ async def create_many(
 async def read_many(
     action: Optional[str] = Query(None),
     app: Optional[str] = Query(None),
+    identifier: Optional[PyObjectId] = Query(None, alias="_id"),
     type: Optional[str] = Query(None),
     user_email: Optional[list[str]] = Query(None, alias="user.email"),
 ) -> list[Event]:
     filters = {
+        "_id": identifier,
         "data.action": action,
         "data.app": app,
         "data.type": type,

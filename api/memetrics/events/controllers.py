@@ -1,8 +1,7 @@
 from fastapi import BackgroundTasks
 from tauth.schemas import Creator
 
-from .. import utils
-from ..utils import DB
+from ..utils import DB, PyObjectId
 from .models import EventsPerApp, EventsPerUser
 from .schemas import Event, EventData, GeneratedFields, PatchEventData
 
@@ -50,6 +49,8 @@ def create_many(
 
 def read_many(**filters) -> list[Event]:
     filters = {k: v for k, v in filters.items() if v is not None}
+    if "_id" in filters:
+        filters["_id"] = PyObjectId(filters["_id"])
     db = DB.get()
     cursor = db["events"].find(filters)
     return list(cursor.limit(10))
