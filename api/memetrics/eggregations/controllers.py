@@ -7,7 +7,6 @@ from ..utils import DB
 
 
 def read_many(
-    action: Optional[str],
     app_startswith: Optional[str],
     date_gte: str,
     date_lt: str,
@@ -15,33 +14,28 @@ def read_many(
     limit: int,
     offset: int,
     sort: list[tuple[str, int]],
-    type: Optional[str],
     user_email: Optional[list[str]],
+    **kwargs,
 ):
     db = DB.get()
-    filters: dict[str, Any] = {}
-    if action is not None:
-        filters["action"] = action
+    filters: dict[str, Any] = {k: v for k, v in kwargs.items() if v is not None}
     if app_startswith is not None:
         filters["app"] = {"$regex": f"^{app_startswith}"}
     if date_gte is not None:
         filters["date"] = {"$gte": datetime.fromisoformat(date_gte)}
     if date_lt is not None:
         filters["date"] |= {"$lt": datetime.fromisoformat(date_lt)}
-    if type is not None:
-        filters["type"] = type
     if user_email is not None:
         filters["user_email"] = {"$in": user_email}
 
     if groupby == "day":
         ret = db["events_per_user"].find(filters, {"_id": 0})
-        return ret.limit(limit).skip(offset).sort(sort)
+        ret = ret.limit(limit).skip(offset).sort(sort)
     else:
         ret = aggregate_events_per_user(
             db, filters, groupby, limit, offset, sort=sort
         )
-
-    return ret
+    return list(ret)
 
 
 def aggregate_events_per_user(
