@@ -26,7 +26,7 @@ class EventData(BaseModel):
     app_version: str
     extra: list[Attribute] = Field(default_factory=list)
     type: str  # location in app/feature name
-    user: User
+    user: User = Field(default_factory=dict)
 
     class Config:
         examples = {
@@ -45,8 +45,8 @@ class EventData(BaseModel):
                     "app": "/osf/allai/vscode/OSFDigital.wingman",
                     "app_version": "1.2.3",
                     "extra": [
-                        {"name": "completion-id", "value": "123"},
-                        {"name": "vscode-version", "value": "1.2.3"},
+                        {"name": "completion-id", "type": "string", "value": "123"},
+                        {"name": "vscode-version", "type": "string", "value": "1.2.3"},
                     ],
                     "type": "code.completion",
                 },
@@ -58,15 +58,15 @@ class EventData(BaseModel):
                     "app": "/osf/web/chat-wingman",
                     "app_version": "1.2.3",
                     "extra": [
-                        {"name": "message-id", "value": "123"},
-                        {"name": "user-agent", "value": "firefox-116"},
+                        {"name": "message-id", "type": "string", "value": "123"},
+                        {"name": "user-agent", "type": "string", "value": "firefox-116"},
                     ],
                     "type": "chat.thread.message.code-block",
                     "user": {
                         "email": "user@org.com",
                         "extra": [
-                            {"name": "azure_id", "value": "123"},
-                            {"name": "ip", "value": "200.0.0.42"},
+                            {"name": "azure_id", "type": "string", "value": "123"},
+                            {"name": "ip", "type": "string", "value": "200.0.0.42"},
                         ],
                     },
                 },
@@ -89,6 +89,11 @@ class Event(BaseModel):
     class Config:
         allow_population_by_field_name = True
         json_encoders = {PyObjectId: lambda x: {"$oid": str(x)}}
+        indices = [
+            ("created_at", -1),
+            ("data.type", 1),
+            [("data.app", 1), ("data.type", 1), ("data.action", 1)],
+        ]
 
 
 class GeneratedFields(BaseModel):

@@ -26,15 +26,13 @@ class EventsPerUser(BaseModel):
     date: date  # 2020-01-01
     events: Optional[list[SourceRefs]] = None  # events are discarded in aggregations
 
-    @classmethod
-    def indices(cls) -> list:
-        idx = [
+    class Config:
+        indices = [
             ("action", 1),
             ("date", -1),
             ("user_email", 1),
             [("app", 1), ("type", 1), ("action", 1)],
         ]
-        return idx
 
     @classmethod
     def increment_from_event(cls, event: Event, db: Database):
