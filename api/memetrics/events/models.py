@@ -2,6 +2,7 @@ from datetime import date, datetime, time
 from typing import Optional
 
 from pydantic import BaseModel
+from pymongo import IndexModel
 from pymongo import operations as pymongo_operations
 from pymongo.database import Database
 
@@ -28,10 +29,10 @@ class EventsPerUser(BaseModel):
 
     class Config:
         indices = [
-            ("action", 1),
-            ("date", -1),
-            ("user_email", 1),
-            [("app", 1), ("type", 1), ("action", 1)],
+            IndexModel([("action", 1)]),
+            IndexModel([("date", -1)]),
+            IndexModel([("user_email", 1)]),
+            IndexModel([("app", 1), ("type", 1), ("action", 1)]),
         ]
 
     @classmethod

@@ -3,6 +3,7 @@ from typing import Any, Literal, TypedDict
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
+from pymongo import IndexModel
 from tauth.schemas import Creator
 
 from ..utils import PyObjectId
@@ -90,9 +91,9 @@ class Event(BaseModel):
         allow_population_by_field_name = True
         json_encoders = {PyObjectId: lambda x: {"$oid": str(x)}}
         indices = [
-            ("created_at", -1),
-            ("data.type", 1),
-            [("data.app", 1), ("data.type", 1), ("data.action", 1)],
+            IndexModel([("created_at", -1)]),
+            IndexModel([("data.type", 1)]),
+            IndexModel([("data.app", 1), ("data.type", 1), ("data.action", 1)]),
         ]
 
 
