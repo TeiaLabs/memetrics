@@ -1,12 +1,21 @@
 from datetime import datetime
 from typing import Any, Literal, Optional
 
+from fastapi import BackgroundTasks
 from pymongo.database import Database
+from memetrics.events.controllers import create_one
+from memetrics.events.schemas import EventData
+from tauth.schemas import Creator
 
+from ..settings import Settings
 from ..utils import DB
 
+sets = Settings()
+# meme_creator = Creator(client_name=sets.CLIENT_NAME, token_name=sets.TOKEN_NAME, user_email=.user_email)
 
 def read_many(
+    background_tasks: BackgroundTasks,
+    creator: Creator,
     app_startswith: Optional[str],
     date_gte: str,
     date_lt: str,
@@ -35,6 +44,8 @@ def read_many(
         ret = aggregate_events_per_user(
             db, filters, groupby, limit, offset, sort=sort
         )
+    event = EventData(**{})
+    # create_one(background_tasks, event, )
     return list(ret)
 
 

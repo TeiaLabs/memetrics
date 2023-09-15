@@ -1,5 +1,6 @@
 from typing import Optional
 
+from bson.objectid import ObjectId as BsonObjectId
 from pymongo import MongoClient
 from pymongo.database import Database
 from tauth.schemas import Creator
@@ -40,9 +41,6 @@ def get_root_dir(path: str) -> Optional[str]:
     if not root_folder:
         return None
     return root_folder
-
-
-from bson.objectid import ObjectId as BsonObjectId
 
 
 class PyObjectId(BsonObjectId):

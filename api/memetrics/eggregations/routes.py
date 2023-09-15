@@ -1,9 +1,8 @@
-from typing import Any, Literal, Optional
+from typing import Literal, Optional
 
-from fastapi import APIRouter, Request, Query
-from pymongo.cursor import Cursor
-
+from fastapi import APIRouter, HTTPException, Query, Request, BackgroundTasks
 from memetrics.events.models import EventsPerUser
+
 from . import controllers
 
 router = APIRouter(tags=["eggregator"])
@@ -11,7 +10,10 @@ router = APIRouter(tags=["eggregator"])
 
 @router.get("/eggregations/count-by-user")
 async def read_many(
+    background_tasks: BackgroundTasks,
+    request: Request,
     action: Optional[str] = Query(None),
+    app: str = Query(None),
     app_startswith: Optional[str] = Query(None, alias="app:startswith"),
     date_gte: str = Query("2021-01-01", alias="date:gte"),
     date_lt: str = Query("2024-01-01", alias="date:lt"),
@@ -22,13 +24,17 @@ async def read_many(
     type: Optional[str] = Query(None),
     user_email: Optional[list[str]] = Query(None),
 ) -> list[EventsPerUser]:
-
+    if app and app_startswith:
+        raise HTTPException(422, "Cannot use both `app` and `app:startswith`.")
     def parse_sort(sort: str) -> list[tuple[str, int]]:
         return [(field_order[1:], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
 
     sort_tuples = parse_sort(sort)
 
-    cursor = controllers.read_many(
+    items = controllers.read_many(
+        background_tasks=background_tasks,
+        creator=request.state.creator,
+        app=app,
         action=action,
         app_startswith=app_startswith,
         date_gte=date_gte,
@@ -40,5 +46,4 @@ async def read_many(
         type=type,
         user_email=user_email,
     )
-    items = list(cursor)
     return items
