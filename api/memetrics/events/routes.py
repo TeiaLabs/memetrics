@@ -37,9 +37,9 @@ async def read_many(
     user_email: Optional[list[str]] = Query(None, alias="user.email"),
 ) -> list[Event]:
     filters = {
-        "action": action,
-        "app": app,
-        "type": type,
-        "user.email": user_email,
+        "data.action": action,
+        "data.app": app,
+        "data.type": type,
+        "data.user.email": user_email,
     }
     return controllers.read_many(**filters)
