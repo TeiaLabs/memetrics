@@ -33,6 +33,7 @@ jobs:
             api/requirements.txt
             api/requirements-test.txt
       - name: Setup pip and pytest
+        working-directory: ./api
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-test.txt
