@@ -1,1 +1,0 @@
-tauth @ git+https://github.com/TeiaLabs/tauth.git@master

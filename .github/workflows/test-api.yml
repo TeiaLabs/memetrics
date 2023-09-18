@@ -1,0 +1,45 @@
+name: Test API
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - "api/**"
+      - ".github/workflows/test-api.yml"
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - "api/**"
+      - ".github/workflows/test-api.yml"
+
+
+env:
+  MEME_MONGODB_URI: ${{ secrets.ATLAS_INTERNAL_MONGODB_URI }}
+  MEME_MONGODB_DBNAME: "memetrics-github-actions"
+
+jobs:
+  autotester:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+          cache-dependency-path: |
+            requirements.txt
+            requirements-test.txt
+      - name: Setup pip and pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt
+      - name: Install.
+        working-directory: ./api
+        run: |
+          pip install .
+      - name: Test.
+        working-directory: ./api
+        run: pytest ./tests/ --tb=no
