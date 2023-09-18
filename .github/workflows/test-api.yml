@@ -30,8 +30,8 @@ jobs:
           python-version: "3.11"
           cache: 'pip'
           cache-dependency-path: |
-            requirements.txt
-            requirements-test.txt
+            api/requirements.txt
+            api/requirements-test.txt
       - name: Setup pip and pytest
         run: |
           python -m pip install --upgrade pip
