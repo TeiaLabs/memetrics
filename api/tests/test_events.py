@@ -35,3 +35,4 @@ def test_post(client: TestClient, headers: dict[str, str], db: Database, event_d
     assert doc["created_by"]["user_email"] == headers["X-User-Email"]
     # cleanup
     db["events"].delete_one({"_id": ObjectId(res_data["_id"])})
+    db["events_per_user"].delete_many({"user_email": "user@org.com"})
