@@ -35,5 +35,6 @@ def test_health(client: TestClient):
     assert response.json() == {"status": "ok"}
 
 
+@pytest.fixture(scope="session")
 def db() -> Database:
     return DB.get()
