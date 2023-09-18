@@ -44,7 +44,7 @@ def read_many(
         ret = aggregate_events_per_user(
             db, filters, groupby, limit, offset, sort=sort
         )
-    event = EventData(**{})
+    # event = EventData(**{})
     # create_one(background_tasks, event, )
     return list(ret)
 
