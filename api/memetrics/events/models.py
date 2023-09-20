@@ -11,7 +11,7 @@ from .schemas import Event
 
 
 class SourceRefs(BaseModel):
-    event_id: str
+    event_id: PyObjectId
     event_creation: datetime
 
 
@@ -25,6 +25,7 @@ class EventsPerUser(BaseModel):
     # aggregation
     count: int
     date: date  # 2020-01-01
+    latest_event_date: Optional[date] = None
     events: Optional[list[SourceRefs]] = None  # events are discarded in aggregations
 
     class Config:
