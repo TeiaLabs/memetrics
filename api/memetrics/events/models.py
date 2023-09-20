@@ -11,7 +11,7 @@ from .schemas import Event
 
 
 class SourceRefs(BaseModel):
-    event_id: PyObjectId
+    event_id: str
     event_creation: datetime
 
 
