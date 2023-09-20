@@ -16,7 +16,7 @@ class SourceRefs(BaseModel):
 
 
 class EventsPerUser(BaseModel):
-    id: PyObjectId = Field(alias="_id")
+    id: PyObjectId = Field(alias="_id", default_factory=PyObjectId)
     # event
     action: str  # send-message
     app: str  # /osf/vscode-extension/OSFDigital.wingman
