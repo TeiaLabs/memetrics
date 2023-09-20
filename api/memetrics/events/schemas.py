@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Any, Literal, TypedDict
 
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from pymongo import IndexModel
 from tauth.schemas import Creator
 
@@ -81,6 +81,13 @@ class Event(BaseModel):
     data: EventData
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     schema_version: int = Field(default=1)
+
+    @validator("id", always=True)
+    def id_must_by_objectid(cls, v):
+        """Make sure _id is instance of PyObjectId."""
+        if isinstance(v, str):
+            return PyObjectId(v)
+        return v
 
     def bson(self) -> dict[str, Any]:
         obj = self.dict(by_alias=True)

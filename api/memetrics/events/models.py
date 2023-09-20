@@ -1,7 +1,7 @@
 from datetime import date, datetime, time
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import IndexModel
 from pymongo import operations as pymongo_operations
 from pymongo.database import Database
@@ -16,7 +16,7 @@ class SourceRefs(BaseModel):
 
 
 class EventsPerUser(BaseModel):
-    _id: PyObjectId
+    id: PyObjectId = Field(alias="_id")
     # event
     action: str  # send-message
     app: str  # /osf/vscode-extension/OSFDigital.wingman
