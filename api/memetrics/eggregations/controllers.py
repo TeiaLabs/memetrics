@@ -72,6 +72,7 @@ def aggregate_events_per_user(
                 "type": "$type",
             },
             "count": {"$sum": "$count"},
+            "events": {"$push": "$events"},
         }
     }
 
@@ -85,6 +86,7 @@ def aggregate_events_per_user(
             "date": "$_id.date",
             "type": "$_id.type",
             "count": 1,
+            "events": 1,
         }
     }
     sort_stage = {"$sort": dict(sort)}
