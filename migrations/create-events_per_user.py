@@ -14,7 +14,7 @@ client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 db_local = MongoClient()["egg"]
 obj_batch = []
-filters = {"created_at": {"$gte": datetime.fromisoformat("2023-07-01")}}
+filters = {"created_at": {"$gte": datetime.fromisoformat("2024-07-01")}}
 count = db["events"].count_documents(filters)
 for obj in tqdm.tqdm(db["events"].find(filters).batch_size(BATCH_SIZE), total=count):
     obj_batch.append(obj)

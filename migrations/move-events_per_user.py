@@ -13,7 +13,7 @@ client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 db_local = MongoClient()["egg"]
 obj_batch = []
-filters = {}
+filters = {"date": {"$gte": "2024-01-01"}}
 db["events_per_user"].delete_many(filters)
 count = db_local["events_per_user"].count_documents(filters)
 for obj in tqdm.tqdm(db_local["events_per_user"].find(filters).batch_size(BATCH_SIZE), total=count):
