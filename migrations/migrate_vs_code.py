@@ -1,21 +1,21 @@
 #%%
+import os
 import json
-from typing import Type
+import dotenv
 import pandas as pd
-from badger_api import Settings
 from redb.core.base import BaseDocument
 from redb.core.instance import RedB, MongoConfig
 
 from memetrics.events.schemas import Creator, Event, EventData, User, Attribute
-from memetrics_sdk.client import WebserviceClient
 
 from redb.core import Document
 
+dotenv.load_dotenv()
 RedB.setup(
     backend="mongo",
     config=MongoConfig(
-    # database_uri=None, # SET this !!
-    default_database="memetrics-dev"
+    database_uri=os.environ["MEME_MONGODB_URI"],
+    default_database=os.environ["MEME_MONGODB_DBNAME"],
 ))
 
 
@@ -24,8 +24,12 @@ def load_jsonl(filepath):
         for line in f:
             yield json.loads(line)
 
-data = load_jsonl("/home/jonatas/repos/memetrics/migrations/dump_cosmos_2_client.jsonl")
+def count_file_lines(filepath):
+    with open(filepath, 'rb') as f:
+        return sum(1 for _ in f)
 
+data = load_jsonl("dump_cosmos_2_client.jsonl")
+num_lines = count_file_lines("dump_cosmos_2_client.jsonl")
 # out
 #%%
 
@@ -139,11 +143,10 @@ client = EventsDAO._get_driver_collection(EventsDAO)
 batch_size = 2048
 batch = []
 
-for event in tqdm(data):
-
+for event in tqdm(data, total=num_lines):
     creator = Creator(
-        client_name='/teialabs/melt',
-        token_name="jonatas.workstation",
+        client_name='/teialabs',
+        token_name="nei.workstation",
         user_email=event["user_email"],
     )
 
@@ -171,7 +174,6 @@ for event in tqdm(data):
             type=type_action["type"],
             user=User(
                 email=event["user_email"],
-                # ip=event["user_ip"],
                 extra=[
                     Attribute(name="user_ip", type="string", value=event["user_ip"]),
                     Attribute(name="id", type="string", value=event["user_id"])
@@ -180,16 +182,10 @@ for event in tqdm(data):
         )
     )
     batch.append(memetrics_event.bson())
-
     if len(batch) == batch_size:
-
         r = client.insert_many(documents=batch)
-        tqdm.write(f"{r}")
         batch = []
 
-# Insert any remaining events in the last batch
 if batch:
     r = client.insert_many(documents=batch)
-    tqdm.write(f"{r}")
-
-# %%
+    batch = []
