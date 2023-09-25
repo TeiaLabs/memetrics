@@ -1,61 +1,37 @@
-#%%
-import os
 import json
+import os
+from datetime import datetime
+
 import dotenv
 import pandas as pd
-from redb.core.base import BaseDocument
-from redb.core.instance import RedB, MongoConfig
-
-from memetrics.events.schemas import Creator, Event, EventData, User, Attribute
-
 from redb.core import Document
+from redb.core.base import BaseDocument
+from redb.core.instance import MongoConfig, RedB
+from tqdm import tqdm
+from pymongo import MongoClient
+from memetrics.events.schemas import Attribute, Creator, Event, EventData, User
 
 dotenv.load_dotenv()
-RedB.setup(
-    backend="mongo",
-    config=MongoConfig(
-    database_uri=os.environ["MEME_MONGODB_URI"],
-    default_database=os.environ["MEME_MONGODB_DBNAME"],
-))
+BATCH_SIZE = 2048
+client = MongoClient(os.environ["MEME_MONGODB_URI"])
+db = client[os.environ["MEME_MONGODB_DBNAME"]]
+collection = db["events"]
+app = "/osf/allai_code/vscode/OSFDigital.allai"
 
 
 def load_jsonl(filepath):
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
             yield json.loads(line)
 
+
 def count_file_lines(filepath):
-    with open(filepath, 'rb') as f:
+    with open(filepath, "rb") as f:
         return sum(1 for _ in f)
+
 
 data = load_jsonl("dump_cosmos_2_client.jsonl")
 num_lines = count_file_lines("dump_cosmos_2_client.jsonl")
-# out
-#%%
-
-# client = WebserviceClient()
-#%%
-app = "/osf/allai_code/vscode/OSFDigital.allai"
-
-"""
-['client:chat.requested'
- 'client:completion.displayed'
- 'client:chat.displayed'
- 'client:explanation.requested'
- 'client:docstring.requested'
- 'client:completion.requested'
- 'client:completion.accepted'
- 'client:docstring.displayed'
- 'client:unit_tests.requested'
- 'client:unit_tests.displayed'
- 'client:explanation.displayed'
- 'client:bug_fix.requested'
- 'client:optimization.displayed'
- 'client:optimization.requested'
- 'client:chat.failed'
- 'client:optimization.failed'
- 'client:completion.failed']
-"""
 
 mapping = {
     "client:chat.requested": {
@@ -128,24 +104,10 @@ mapping = {
     },
 }
 
-#%%
-
-from tqdm import tqdm
-from datetime import datetime
-
-class EventsDAO(Document, Event):
-    @classmethod
-    def collection_name(cls: type[BaseDocument]) -> str:
-        return "events"
-
-client = EventsDAO._get_driver_collection(EventsDAO)
-
-batch_size = 2048
 batch = []
-
 for event in tqdm(data, total=num_lines):
     creator = Creator(
-        client_name='/teialabs',
+        client_name="/teialabs",
         token_name="nei.workstation",
         user_email=event["user_email"],
     )
@@ -155,11 +117,21 @@ for event in tqdm(data, total=num_lines):
 
     extra = []
     if event.get("vsc_version"):
-        extra.append(Attribute(name="vsc_version", type="string", value=event["vsc_version"]))
+        extra.append(
+            Attribute(name="vsc_version", type="string", value=event["vsc_version"])
+        )
     if event.get("string_length"):
-        extra.append(Attribute(name="string_length", type="integer", value=event["string_length"]))
+        extra.append(
+            Attribute(
+                name="string_length", type="integer", value=event["string_length"]
+            )
+        )
     if event.get("tokens_length"):
-        extra.append(Attribute(name="tokens_length", type="integer", value=event["tokens_length"]))
+        extra.append(
+            Attribute(
+                name="tokens_length", type="integer", value=event["tokens_length"]
+            )
+        )
     if event.get("event_id"):
         extra.append(Attribute(name="event_id", type="string", value=event["event_id"]))
 
@@ -176,16 +148,16 @@ for event in tqdm(data, total=num_lines):
                 email=event["user_email"],
                 extra=[
                     Attribute(name="user_ip", type="string", value=event["user_ip"]),
-                    Attribute(name="id", type="string", value=event["user_id"])
-                ]
+                    Attribute(name="id", type="string", value=event["user_id"]),
+                ],
             ),
-        )
+        ),
     )
     batch.append(memetrics_event.bson())
-    if len(batch) == batch_size:
-        r = client.insert_many(documents=batch)
+    if len(batch) == BATCH_SIZE:
+        r = collection.insert_many(documents=batch)
         batch = []
 
 if batch:
-    r = client.insert_many(documents=batch)
+    r = collection.insert_many(documents=batch)
     batch = []
