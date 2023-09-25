@@ -1,0 +1,19 @@
+[
+    "client:chat.requested",
+    "client:completion.displayed",
+    "client:chat.displayed",
+    "client:explanation.requested",
+    "client:docstring.requested",
+    "client:completion.requested",
+    "client:completion.accepted",
+    "client:docstring.displayed",
+    "client:unit_tests.requested",
+    "client:unit_tests.displayed",
+    "client:explanation.displayed",
+    "client:bug_fix.requested",
+    "client:optimization.displayed",
+    "client:optimization.requested",
+    "client:chat.failed",
+    "client:optimization.failed",
+    "client:completion.failed"
+]
