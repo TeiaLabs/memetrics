@@ -3,10 +3,6 @@ import os
 from datetime import datetime
 
 import dotenv
-import pandas as pd
-from redb.core import Document
-from redb.core.base import BaseDocument
-from redb.core.instance import MongoConfig, RedB
 from tqdm import tqdm
 from pymongo import MongoClient
 from memetrics.events.schemas import Attribute, Creator, Event, EventData, User
@@ -30,8 +26,8 @@ def count_file_lines(filepath):
         return sum(1 for _ in f)
 
 
-data = load_jsonl("dump_cosmos_2_client.jsonl")
-num_lines = count_file_lines("dump_cosmos_2_client.jsonl")
+data = load_jsonl("dump_cosmos_3_client.jsonl")
+num_lines = count_file_lines("dump_cosmos_3_client.jsonl")
 
 mapping = {
     "client:chat.requested": {

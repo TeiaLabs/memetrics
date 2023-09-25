@@ -34,6 +34,7 @@ The script will use a mongo aggregation to compare the number
 of events in the "events" collection with the events_per_user.count.
 """
 import os
+from datetime import datetime
 
 import dotenv
 from pymongo import MongoClient
@@ -44,6 +45,13 @@ client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 
 pipeline = [
+    {
+        "$match": {
+            "created_at": {
+                "$gte": datetime.fromisoformat("2023-09-15"),
+            },
+        },
+    },
     {
         "$group": {
             "_id": {
@@ -76,5 +84,6 @@ for doc in tqdm(agg, total=num_docs_in_agg):
     if not egg:
         print("No egg for", doc)
         continue
+    tqdm.write(str(egg["date"]))
     if egg["count"] != doc["count"]:
         print("Mismatch:", doc["count"], egg["count"], doc["_id"])

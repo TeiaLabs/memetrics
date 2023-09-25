@@ -9,6 +9,7 @@ from pymongo import MongoClient
 from memetrics.events.models import EventsPerUser
 from memetrics.events.schemas import Event
 
+dotenv.load_dotenv()
 T = TypeVar("T")
 
 
@@ -27,11 +28,13 @@ def batchify_iter(
 
 
 dotenv.load_dotenv()
-BATCH_SIZE = 4096
+BATCH_SIZE = 2048
 client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 db_local = MongoClient()["nei"]
-filters = {"created_at": {"$gte": datetime.fromisoformat("2024-01-01")}}
+date_filter = {"$gte": datetime.fromisoformat("2023-08-01")}
+filters = {"created_at": date_filter}
+db["events_per_user"].delete_many({"date": date_filter})
 
 count = db["events"].count_documents(filters)
 cursor = db["events"].find(filters)

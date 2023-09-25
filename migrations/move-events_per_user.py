@@ -1,9 +1,11 @@
 import os
+from datetime import datetime
 from typing import Iterable, TypeVar
 
 import dotenv
 import tqdm
 from pymongo import MongoClient
+from tap import Tap
 
 T = TypeVar("T")
 
@@ -22,17 +24,30 @@ def batchify_iter(
         yield batch
 
 
+class Args(Tap):
+    batch: int = 4096
+    col: str  # "events"
+    attr: str  # "created_at"
+    date: str  # "2024-08-01"
+
+
+args = Args().parse_args()
 dotenv.load_dotenv()
-BATCH_SIZE = 1024
+
+BATCH_SIZE = args.batch
+COLLECTION = args.col
 client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
-db_local = MongoClient()["egg"]
-filters = {"date": {"$gte": "2024-01-01"}}
-db["events_per_user"].delete_many(filters)
+db_local = MongoClient()["nei"]
+filters = {args.attr: {"$gte": datetime.fromisoformat(args.date)}}
 
-count = db_local["events_per_user"].count_documents(filters)
-cursor = db_local["events_per_user"].find(filters)
+input(f"Deleting {filters} from {db.name}/{COLLECTION}. Press enter to continue.")
+res = db[COLLECTION].delete_many(filters)
+print(f"Deleted {res.deleted_count} documents.")
+
+count = db_local[COLLECTION].count_documents(filters)
+cursor = db_local[COLLECTION].find(filters)
 for obj_batch in tqdm.tqdm(batchify_iter(cursor, BATCH_SIZE), total=count // BATCH_SIZE + 1):
-    db["events_per_user"].insert_many(obj_batch)
+    db[COLLECTION].insert_many(obj_batch)
 
 client.close()
