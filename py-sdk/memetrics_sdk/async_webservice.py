@@ -6,9 +6,9 @@ from threading import Lock, Thread
 from typing import Optional, cast
 
 import httpx
-from memetrics.events.schemas import EventData
+from memetrics.events.schemas import GeneratedFields
 
-from .schemas import TAuthHeaders
+from .schemas import EventData, TAuthHeaders
 
 
 class AsyncWebserviceClient:
@@ -75,7 +75,7 @@ class AsyncWebserviceClient:
 
         self.is_active = False
 
-    def insert_one(
+    def delayed_insert_one(
         self, document: EventData, headers: Optional[TAuthHeaders] = None
     ) -> None:
         # Critical section
@@ -89,6 +89,19 @@ class AsyncWebserviceClient:
         if not self.is_active:
             self.is_active = True
             self.__create_thread().run()
+
+    async def insert_one(
+        self,
+        document: EventData,
+        headers: Optional[TAuthHeaders] = None,
+    ) -> GeneratedFields:
+        relative_url = "/events"
+        result = await self.http_client.post(
+            relative_url,
+            headers=cast(dict[str, str], headers),
+            json=document,
+        )
+        return GeneratedFields(**result.json())
 
     def __del__(self):
         future = self.http_client.aclose()
