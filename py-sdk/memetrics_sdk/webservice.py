@@ -1,13 +1,12 @@
-import os
 import json
+import os
 from datetime import datetime
-
 from typing import Optional, cast
 
 import httpx
 from memetrics.events.schemas import GeneratedFields
 
-from .schemas import TAuthHeaders, EventData
+from .schemas import EventData, TAuthHeaders
 
 
 class WebserviceClient:
