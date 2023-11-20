@@ -11,9 +11,13 @@ from .schemas import TAuthHeaders, EventData
 
 
 class WebserviceClient:
-    def __init__(self):
-        self.api_key = os.environ["TEIA_API_KEY"]
-        self.url = os.environ["MEMETRICS_URL"]
+    def __init__(
+        self,
+        url: str = os.environ["MEMETRICS_URL"],
+        api_key: str = os.environ["TEIA_API_KEY"],
+    ):
+        self.api_key = api_key
+        self.url = url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
         }
