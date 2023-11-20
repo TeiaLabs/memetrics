@@ -12,9 +12,14 @@ from .schemas import TAuthHeaders
 
 
 class AsyncWebserviceClient:
-    def __init__(self, timeout: float = 0.5):
-        self.api_key = os.environ["TEIA_API_KEY"]
-        self.url = os.environ["MEMETRICS_URL"]
+    def __init__(
+        self,
+        timeout: float = 0.5,
+        url: str = os.environ["MEMETRICS_URL"],
+        api_key: str = os.environ["TEIA_API_KEY"],
+    ):
+        self.api_key = api_key
+        self.url = url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
         }
