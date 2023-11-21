@@ -6,17 +6,21 @@ from typing import Optional, cast
 import httpx
 from memetrics.events.schemas import GeneratedFields
 
+from .errors import MissingAPIKeyError
 from .schemas import EventData, TAuthHeaders
 
 
 class WebserviceClient:
     def __init__(
         self,
-        url: str = os.environ["MEMETRICS_URL"],
-        api_key: str = os.environ["TEIA_API_KEY"],
+        api_key: Optional[str] = os.getenv("TEIA_API_KEY", None),
+        url: Optional[str] = os.getenv("MEMETRICS_URL", "https://memetrics.teialabs.com.br"),
     ):
         self.api_key = api_key
         self.url = url
+        if self.api_key is None:
+            m = "'TEIA_API_KEY' env var is required or api_key param must be passed."
+            raise MissingAPIKeyError(m)
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
         }
