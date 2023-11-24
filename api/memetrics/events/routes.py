@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Body, Query, Request
+from fastapi import APIRouter, BackgroundTasks, Body, HTTPException, Query, Request
 from fastapi import status as s
 
 from . import controllers
@@ -37,11 +37,20 @@ async def read_many(
     identifier: Optional[PyObjectId] = Query(None, alias="_id"),
     type: Optional[str] = Query(None),
     user_email: Optional[list[str]] = Query(None, alias="user.email"),
+    extra_name: Optional[str] = Query(None, alias="extra.name"),
+    extra_value: Optional[str] = Query(None, alias="extra.value"),
 ) -> list[Event]:
+    if (extra_name and not extra_value) or (not extra_name and extra_value):
+        raise HTTPException(
+            status_code=s.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="extra.name and extra.value must be used together.",
+        )
     filters = {
         "_id": identifier,
         "data.action": action,
         "data.app": app,
+        "data.extra.name": extra_name,
+        "data.extra.value": extra_value,
         "data.type": type,
         "data.user.email": user_email,
     }
