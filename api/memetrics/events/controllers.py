@@ -1,4 +1,5 @@
 from fastapi import BackgroundTasks
+from pymongo import ReadPreference
 from tauth.schemas import Creator
 
 from ..utils import DB, PyObjectId
@@ -52,5 +53,8 @@ def read_many(**filters) -> list[Event]:
     if "_id" in filters:
         filters["_id"] = PyObjectId(filters["_id"])
     db = DB.get()
-    cursor = db["events"].find(filters)
+    col = db.get_collection(
+        "events", read_preference=ReadPreference.SECONDARY_PREFERRED
+    )
+    cursor = col.find(filters)
     return list(cursor.limit(10))
