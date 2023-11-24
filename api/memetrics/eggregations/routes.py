@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, Request, BackgroundTasks, Header
 from memetrics.events.models import EventsPerUser
 
 from . import controllers
@@ -23,7 +23,10 @@ async def read_many(
     sort: str = Query("-date,-count,+app", alias="$sort"),
     type: Optional[str] = Query(None),
     user_email: Optional[list[str]] = Query(None),
+    show_events_ref: Literal["none", "default", "always"] = Header("default", alias="x-show-event-refs"),
 ) -> list[EventsPerUser]:
+    if show_events_ref == "always":
+        raise HTTPException(422, "Returning event-refs when groupby!=day is not supported yet.")
     if app and app_startswith:
         raise HTTPException(422, "Cannot use both `app` and `app:startswith`.")
     def parse_sort(sort: str) -> list[tuple[str, int]]:
@@ -45,5 +48,6 @@ async def read_many(
         sort=sort_tuples,
         type=type,
         user_email=user_email,
+        extra_projection={"events": 0} if show_events_ref == "none" else {},
     )
     return items

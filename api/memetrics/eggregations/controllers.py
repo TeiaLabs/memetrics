@@ -24,10 +24,12 @@ def read_many(
     offset: int,
     sort: list[tuple[str, int]],
     user_email: Optional[list[str]],
+    extra_projection: dict[str, Any],
     **kwargs,
 ):
     db = DB.get()
     filters: dict[str, Any] = {k: v for k, v in kwargs.items() if v is not None}
+
     if app_startswith is not None:
         filters["app"] = {"$regex": f"^{app_startswith}"}
     if date_gte is not None:
@@ -38,7 +40,7 @@ def read_many(
         filters["user_email"] = {"$in": user_email}
 
     if groupby == "day":
-        ret = db["events_per_user"].find(filters, {"_id": 0})
+        ret = db["events_per_user"].find(filters, {"_id": 0, **extra_projection})
         ret = ret.limit(limit).skip(offset).sort(sort)
     else:
         ret = aggregate_events_per_user(
