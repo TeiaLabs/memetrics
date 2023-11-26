@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Request, BackgroundTasks, H
 from memetrics.events.models import EventsPerUser
 
 from . import controllers
+from .. import utils
 
 router = APIRouter(tags=["eggregator"])
 
@@ -29,10 +30,8 @@ async def read_many(
         raise HTTPException(422, "Returning event-refs when groupby!=day is not supported yet.")
     if app and app_startswith:
         raise HTTPException(422, "Cannot use both `app` and `app:startswith`.")
-    def parse_sort(sort: str) -> list[tuple[str, int]]:
-        return [(field_order[1:], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
 
-    sort_tuples = parse_sort(sort)
+    sort_tuples = utils.parse_sort(sort)
 
     items = controllers.read_many(
         background_tasks=background_tasks,

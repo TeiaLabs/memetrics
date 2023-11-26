@@ -60,3 +60,12 @@ class PyObjectId(BsonObjectId):
             type="string",
             examples=["5eb7cf5a86d9755df3a6c593", "5eb7cfb05e32e07750a1756a"],
         )
+
+
+def parse_sort(sort: str) -> list[tuple[str, int]]:
+    """
+
+    >>> parse_sort("-date,-count,+app")
+    [("date", -1), ("count", -1), ("app", 1)]
+    """
+    return [(field_order[1:], -1 if field_order[0] == "-" else 1) for field_order in sort.split(",")]
