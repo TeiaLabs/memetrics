@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Sequence
 
 from fastapi import BackgroundTasks
 from pymongo.database import Database
@@ -22,7 +22,7 @@ def read_many(
     groupby: Literal["day", "month", "quarter", "year"],
     limit: int,
     offset: int,
-    sort: list[tuple[str, int]],
+    sort: Sequence[tuple[str, int]],
     user_email: Optional[list[str]],
     extra_projection: dict[str, Any],
     **kwargs,
@@ -57,7 +57,7 @@ def aggregate_events_per_user(
     date_granularity: Literal["day", "month", "quarter", "year"],
     limit: int,
     offset: int,
-    sort: list[tuple[str, int]],
+    sort: Sequence[tuple[str, int]],
 ):
     groupby = {
         "$group": {
