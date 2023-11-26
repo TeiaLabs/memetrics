@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from fastapi import BackgroundTasks
 from pymongo import ReadPreference
 from tauth.schemas import Creator
@@ -26,15 +28,15 @@ def create_many(
     created_by: Creator,
 ) -> list[GeneratedFields]:
     fields = []
-    dict_objs = []
+    bson_list = []
     objs = []
-    for event_data in body:
+    for patch_event_data in body:
         obj = Event(
             created_by=created_by,
-            data=event_data.value,
+            data=patch_event_data.value,
         )
         objs.append(obj)
-        dict_objs.append(obj.dict())
+        bson_list.append(obj.bson())
         fields.append(
             GeneratedFields(
                 _id=obj.id,
@@ -43,12 +45,12 @@ def create_many(
             )
         )
     db = DB.get()
-    res = db["events"].insert_many(dict_objs)
+    res = db["events"].insert_many(bson_list)
     EventsPerUser.bulk_increment_from_events(objs, db)
     return fields
 
 
-def read_many(**filters) -> list[Event]:
+def read_many(sort: Sequence[tuple[str, int]], limit: int, offset: int, **filters) -> list[Event]:
     filters = {k: v for k, v in filters.items() if v is not None}
     if "_id" in filters:
         filters["_id"] = PyObjectId(filters["_id"])
@@ -57,4 +59,4 @@ def read_many(**filters) -> list[Event]:
         "events", read_preference=ReadPreference.SECONDARY_PREFERRED
     )
     cursor = col.find(filters)
-    return list(cursor.limit(10))
+    return list(cursor.sort(sort).skip(offset).limit(limit))
