@@ -15,8 +15,8 @@ class AsyncWebserviceClient:
     def __init__(
         self,
         timeout: float = 0.5,
-        url: str = os.environ["MEMETRICS_URL"],
-        api_key: str = os.environ["TEIA_API_KEY"],
+        url: str = os.environ.get("MEMETRICS_URL"),
+        api_key: str = os.environ.get("TEIA_API_KEY"),
     ):
         self.api_key = api_key
         self.url = url
