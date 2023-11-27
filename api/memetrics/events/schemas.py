@@ -4,9 +4,23 @@ from typing import Any, Literal, TypedDict
 from bson import ObjectId
 from pydantic import BaseModel, Field, validator
 from pymongo import IndexModel
-from tauth.schemas import Creator
 
-from ..utils import PyObjectId
+try:
+    from tauth.schemas import Creator
+except:
+    from pydantic import EmailStr
+
+    class Creator(BaseModel):
+        client_name: str
+        token_name: str
+        user_email: EmailStr
+        user_ip: str = "127.0.0.1"
+
+
+try:
+    from ..utils import PyObjectId
+except:
+    from ruson import PydanticObjectId as PyObjectId
 
 
 class Attribute(BaseModel):
@@ -60,7 +74,11 @@ class EventData(BaseModel):
                     "app_version": "1.2.3",
                     "extra": [
                         {"name": "message-id", "type": "string", "value": "123"},
-                        {"name": "user-agent", "type": "string", "value": "firefox-116"},
+                        {
+                            "name": "user-agent",
+                            "type": "string",
+                            "value": "firefox-116",
+                        },
                     ],
                     "type": "chat.thread.message.code-block",
                     "user": {
