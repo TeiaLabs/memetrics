@@ -1,19 +1,28 @@
-import os
 import json
+import os
 from datetime import datetime
-
 from typing import Optional, cast
 
 import httpx
 from memetrics.events.schemas import GeneratedFields
 
-from .schemas import TAuthHeaders, EventData
+from .schemas import EventData, TAuthHeaders
 
 
 class WebserviceClient:
-    def __init__(self):
-        self.api_key = os.environ["TEIA_API_KEY"]
-        self.url = os.environ["MEMETRICS_URL"]
+    def __init__(
+        self,
+        url: str = os.environ.get("MEMETRICS_URL"),
+        api_key: str = os.environ.get("TEIA_API_KEY"),
+    ):
+        if url is None:
+            raise ValueError("URL not defined.")
+
+        if api_key is None:
+            raise ValueError("API Key not defined.")
+
+        self.api_key = api_key
+        self.url = url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
         }

@@ -6,15 +6,26 @@ from threading import Lock, Thread
 from typing import Optional, cast
 
 import httpx
-from memetrics.events.schemas import EventData
+from memetrics.events.schemas import GeneratedFields
 
-from .schemas import TAuthHeaders
+from .schemas import EventData, TAuthHeaders
 
 
 class AsyncWebserviceClient:
-    def __init__(self, timeout: float = 0.5):
-        self.api_key = os.environ["TEIA_API_KEY"]
-        self.url = os.environ["MEMETRICS_URL"]
+    def __init__(
+        self,
+        timeout: float = 0.5,
+        url: str = os.environ.get("MEMETRICS_URL"),
+        api_key: str = os.environ.get("TEIA_API_KEY"),
+    ):
+        if url is None:
+            raise ValueError("URL not defined.")
+
+        if api_key is None:
+            raise ValueError("API Key not defined.")
+
+        self.api_key = api_key
+        self.url = url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
         }
@@ -70,7 +81,7 @@ class AsyncWebserviceClient:
 
         self.is_active = False
 
-    def insert_one(
+    def delayed_insert_one(
         self, document: EventData, headers: Optional[TAuthHeaders] = None
     ) -> None:
         # Critical section
@@ -84,6 +95,19 @@ class AsyncWebserviceClient:
         if not self.is_active:
             self.is_active = True
             self.__create_thread().run()
+
+    async def insert_one(
+        self,
+        document: EventData,
+        headers: Optional[TAuthHeaders] = None,
+    ) -> GeneratedFields:
+        relative_url = "/events"
+        result = await self.http_client.post(
+            relative_url,
+            headers=cast(dict[str, str], headers),
+            json=document,
+        )
+        return GeneratedFields(**result.json())
 
     def __del__(self):
         future = self.http_client.aclose()
