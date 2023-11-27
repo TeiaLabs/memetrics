@@ -18,6 +18,12 @@ class AsyncWebserviceClient:
         url: str = os.environ.get("MEMETRICS_URL"),
         api_key: str = os.environ.get("TEIA_API_KEY"),
     ):
+        if url is None:
+            raise ValueError("URL not defined.")
+
+        if api_key is None:
+            raise ValueError("API Key not defined.")
+
         self.api_key = api_key
         self.url = url
         self.headers = {
