@@ -22,13 +22,11 @@ class AsyncWebserviceClient:
         if url is None:
             raise ValueError("URL not defined.")
 
-        if api_key is None:
-            raise ValueError("API Key not defined.")
-
         self.api_key = api_key
         if self.api_key is None:
             m = "'TEIA_API_KEY' env var is required or api_key param must be passed."
             raise MissingAPIKeyError(m)
+        
         self.url = url
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
