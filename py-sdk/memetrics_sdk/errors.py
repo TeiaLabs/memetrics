@@ -4,3 +4,7 @@ class MemetricsClientError(Exception):
 
 class MissingAPIKeyError(MemetricsClientError):
     pass
+
+
+class MissingAPIURLError(MemetricsClientError):
+    pass
