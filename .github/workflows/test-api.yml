@@ -11,7 +11,7 @@ on:
     paths:
       - "api/**"
       - ".github/workflows/test-api.yml"
-
+  workflow_dispatch:
 
 env:
   MEME_MONGODB_URI: ${{ secrets.ATLAS_INTERNAL_MONGODB_URI }}
