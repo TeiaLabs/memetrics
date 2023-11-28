@@ -1,8 +1,10 @@
 from datetime import datetime
 from typing import Any, Literal
 
+
 def version_less_than_3_12() -> bool:
     import platform
+
     return float(".".join(platform.python_version().split(".")[:2])) < 3.12
 
 
