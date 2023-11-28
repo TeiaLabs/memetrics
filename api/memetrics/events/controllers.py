@@ -1,12 +1,14 @@
+import inspect
 from typing import Sequence
 
-from fastapi import BackgroundTasks
+from bson import ObjectId as BsonObjectId
+from fastapi import BackgroundTasks, HTTPException, status as s
 from pymongo import ReadPreference
 from tauth.schemas import Creator
 
 from ..utils import DB, PyObjectId
 from .models import EventsPerApp, EventsPerUser
-from .schemas import Event, EventData, GeneratedFields, PatchEventData
+from .schemas import Event, EventData, GeneratedFields, PatchEventData, PatchEventExtra
 
 
 def create_one(
@@ -50,13 +52,59 @@ def create_many(
     return fields
 
 
-def read_many(sort: Sequence[tuple[str, int]], limit: int, offset: int, **filters) -> list[Event]:
+def read_many(
+    sort: Sequence[tuple[str, int]], limit: int, offset: int, **filters
+) -> list[Event]:
     filters = {k: v for k, v in filters.items() if v is not None}
     if "_id" in filters:
-        filters["_id"] = PyObjectId(filters["_id"])
+        filters["_id"] = BsonObjectId(filters["_id"])
     db = DB.get()
     col = db.get_collection(
         "events", read_preference=ReadPreference.SECONDARY_PREFERRED
     )
     cursor = col.find(filters)
     return list(cursor.sort(sort).skip(offset).limit(limit))
+
+
+def read_one(identifier: PyObjectId) -> Event:
+    db = DB.get()
+    col = db.get_collection(
+        "events", read_preference=ReadPreference.SECONDARY_PREFERRED
+    )
+    obj = col.find_one({"_id": BsonObjectId(identifier)})
+    if not obj:
+        raise HTTPException(
+            status_code=s.HTTP_404_NOT_FOUND,
+            detail={
+                "msg": f"Event with ID '{identifier}' not found.",
+                "route": read_one.__name__,
+            },
+        )
+    return Event(**obj)
+
+
+def update_one(
+    identifier: PyObjectId, body: PatchEventExtra, created_by: Creator
+) -> bool:
+    db = DB.get()
+    res = db["events"].update_one(
+        {
+            "_id": BsonObjectId(identifier),
+            "created_by.user_email": created_by.user_email,
+        },
+        {
+            "$addToSet": {
+                "data.extra": {
+                    "$each": body.dict()["value"],
+                },
+            },
+        },
+    )
+    found = res.matched_count == 1
+    if not found:
+        raise HTTPException(
+            status_code=s.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID '{identifier}' not found for user '{created_by.user_email}'.",
+        )
+    updated = res.modified_count == 1
+    return updated

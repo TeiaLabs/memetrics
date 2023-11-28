@@ -154,3 +154,28 @@ class PatchEventData(BaseModel):
                 ]
             }
         }
+
+
+class PatchEventExtra(BaseModel):
+    op: Literal["add"]
+    path: Literal["/data/extra"]
+    value: list[Attribute]
+
+    class Config:
+        examples = {
+            "Add another attribute.": {
+                "value": [
+                    {
+                        "op": "add",
+                        "path": "/data/extra",
+                        "value": [
+                            {
+                                "name": "special-id",
+                                "type": "string",
+                                "value": "789",
+                            }
+                        ],
+                    },
+                ]
+            }
+        }
