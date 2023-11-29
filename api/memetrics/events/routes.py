@@ -39,43 +39,6 @@ async def create_many(
     return controllers.create_many(background_tasks, body, request.state.creator)
 
 
-@router.patch(
-    "/events/{identifier}",
-    status_code=s.HTTP_200_OK,
-    responses={404: {}, 304: {}, 422: {}, 204: {}},  # TODO
-)
-async def update_one(
-    request: Request,
-    response: Response,
-    identifier: PyObjectId,
-    body: list[PatchEventExtra] = Body(examples=PatchEventExtra.Config.examples),
-    return_preference: Literal["representation", "minimal"] = Header(
-        "minimal", alias="X-Return-Preference"
-    ),
-) -> Event | None:
-    """
-    200: modified and returned representation
-    204: modified
-    304: not modified
-    404: not found
-    """
-    if len(body) != 1:
-        raise HTTPException(
-            status_code=s.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "msg": "Only one patch operation is allowed.",
-                "type": "NotImplementedError",
-            },
-        )
-    success = controllers.update_one(identifier, body[0], request.state.creator)
-    if not success:
-        response.status_code = s.HTTP_304_NOT_MODIFIED
-        return
-    if return_preference == "representation":
-        return controllers.read_one(identifier)
-    response.status_code = s.HTTP_204_NO_CONTENT
-
-
 @router.get("/events", status_code=s.HTTP_200_OK)
 async def read_many(
     action: Optional[str] = Query(None, alias="data.action"),
@@ -117,3 +80,40 @@ async def read_many(
     return controllers.read_many(
         **filters, limit=limit, offset=offset, sort=sort_tuples
     )
+
+
+@router.patch(
+    "/events/{identifier}",
+    status_code=s.HTTP_200_OK,
+    responses={404: {}, 304: {}, 422: {}, 204: {}},  # TODO
+)
+async def update_one(
+    request: Request,
+    response: Response,
+    identifier: PyObjectId,
+    body: list[PatchEventExtra] = Body(examples=PatchEventExtra.Config.examples),
+    return_preference: Literal["representation", "minimal"] = Header(
+        "minimal", alias="X-Return-Preference"
+    ),
+) -> Event | None:
+    """
+    - 200: modified and returned representation.
+    - 204: modified.
+    - 304: not modified.
+    - 404: not found.
+    """
+    if len(body) != 1:
+        raise HTTPException(
+            status_code=s.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "msg": "Only one patch operation is allowed.",
+                "type": "NotImplementedError",
+            },
+        )
+    success = controllers.update_one(identifier, body[0], request.state.creator)
+    if not success:
+        response.status_code = s.HTTP_304_NOT_MODIFIED
+        return
+    if return_preference == "representation":
+        return controllers.read_one(identifier)
+    response.status_code = s.HTTP_204_NO_CONTENT
