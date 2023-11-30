@@ -14,7 +14,7 @@ from fastapi import status as s
 
 from . import controllers
 from .helpers import help_user_edge_cases
-from .schemas import EventData, GeneratedFields, PatchEventData, Event, PatchEventExtra
+from .schemas import EventData, GeneratedFields, PatchEventData, Event, PatchEventExtra, PartialAttribute
 from ..utils import PyObjectId, parse_sort
 
 router = APIRouter(tags=["events"])
@@ -117,3 +117,28 @@ async def update_one(
     if return_preference == "representation":
         return controllers.read_one(identifier)
     response.status_code = s.HTTP_204_NO_CONTENT
+
+
+@router.put(
+    "/events/{identifier}/data/extra/{name}",
+    status_code=s.HTTP_200_OK,
+    responses={404: {}},  # TODO
+)
+async def replace_one(
+    request: Request,
+    identifier: PyObjectId,
+    name: str,
+    body: PartialAttribute = Body(..., examples=PartialAttribute.Config.examples),
+):
+    """
+    - 200: not modified (not using 304 due to PUT semantics).
+    - 201: created.
+    - 204: overwritten.
+    - 404: not found.
+    """
+    overwritten, created = controllers.replace_one(identifier, name, body, request.state.creator)
+    if overwritten:
+        return Response(status_code=s.HTTP_204_NO_CONTENT)
+    if created:
+        return Response(status_code=s.HTTP_201_CREATED)
+    return Response(status_code=s.HTTP_200_OK)

@@ -8,7 +8,14 @@ from tauth.schemas import Creator
 
 from ..utils import DB, PyObjectId
 from .models import EventsPerApp, EventsPerUser
-from .schemas import Event, EventData, GeneratedFields, PatchEventData, PatchEventExtra
+from .schemas import (
+    Event,
+    EventData,
+    GeneratedFields,
+    PatchEventData,
+    PatchEventExtra,
+    PartialAttribute,
+)
 
 
 def create_one(
@@ -81,6 +88,46 @@ def read_one(identifier: PyObjectId) -> Event:
             },
         )
     return Event(**obj)
+
+
+def replace_one(
+    identifier: PyObjectId, name: str, body: PartialAttribute, created_by: Creator
+) -> tuple[bool, bool]:
+    db = DB.get()
+    filters = {
+        "_id": BsonObjectId(identifier),
+        "created_by.client_name": created_by.client_name,
+        "created_by.token_name": created_by.token_name,
+        "created_by.user_email": created_by.user_email,
+    }
+    res = db["events"].update_one(
+        filters,
+        {
+            "$set": {
+                f"data.extra.$[elem]": body.dict() | {"name": name},
+            },
+        },
+        array_filters=[{"elem.name": name}],
+    )
+    found = res.matched_count == 1
+    if not found:
+        raise HTTPException(
+            status_code=s.HTTP_404_NOT_FOUND,
+            detail=f"Event with ID '{identifier}' not found for user '{created_by}'.",
+        )
+    overwritten = res.modified_count == 1
+    created = False
+    if not overwritten:
+        res = db["events"].update_one(
+            filters,
+            {
+                "$addToSet": {
+                    "data.extra": body.dict() | {"name": name},
+                },
+            },
+        )
+        created = res.modified_count == 1
+    return overwritten, created
 
 
 def update_one(

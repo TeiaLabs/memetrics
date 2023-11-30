@@ -23,6 +23,20 @@ except:
     from ruson import PydanticObjectId as PyObjectId
 
 
+class PartialAttribute(BaseModel):
+    type: Literal["string", "integer", "float", "dict", "list"]
+    value: str | int | float | dict | list
+
+    class Config:
+        examples = {
+            "string": {"value": {"type": "string", "value": "some string"}},
+            "integer": {"value": {"type": "integer", "value": 42}},
+            "float": {"value": {"type": "float", "value": 42.0}},
+            "dict": {"value": {"type": "dict", "value": {"key": "value"}}},
+            "list": {"value": {"type": "list", "value": ["item"]}},
+        }
+
+
 class Attribute(BaseModel):
     name: str
     type: Literal["string", "integer", "float", "dict", "list"]
