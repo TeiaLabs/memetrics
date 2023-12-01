@@ -33,4 +33,4 @@ def init_mongodb():
 def init_dependencies(app):
     security.init_app(app)
     init_redb()
-    init_mongodb()
+    # init_mongodb()
