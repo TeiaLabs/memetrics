@@ -34,7 +34,7 @@ class EventsPerUser(BaseModel):
             IndexModel([("action", 1)]),
             IndexModel([("date", -1)]),
             IndexModel([("user_email", 1)]),
-            IndexModel([("app", 1), ("type", 1), ("action", 1), ("user_email", 1), ("date", 1)], unique=True),
+            IndexModel([("app", 1), ("type", 1), ("action", 1), ("user_email", 1), ("date", 1)]),  # TODO this should be unique, no CAP
         ]
 
     @classmethod
