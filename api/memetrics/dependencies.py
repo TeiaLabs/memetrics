@@ -1,11 +1,23 @@
 from tauth.dependencies import security
 from redb.core.instance import RedB, MongoConfig
 from pymongo import IndexModel
+from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 from .settings import Settings
 from .utils import DB
 from .events.schemas import Event
 from .events.models import EventsPerUser
+
+
+def init_cors(app: FastAPI) -> None:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 def init_redb():
@@ -32,5 +44,6 @@ def init_mongodb():
 
 def init_dependencies(app):
     security.init_app(app)
+    init_cors(app)
     init_redb()
     # init_mongodb()
