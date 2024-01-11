@@ -56,7 +56,7 @@ async def read_many(
             "+data.app,+data.type,+data.action": {},
         },
     ),
-    limit: int = Query(10, ge=1, lt=100000, alias="$limit"),
+    limit: int = Query(10, ge=1, lt=1000, alias="$limit"),
     offset: int = Query(0, ge=0, alias="$offset"),
 ) -> list[Event]:
     if (extra_name and not extra_value) or (not extra_name and extra_value):

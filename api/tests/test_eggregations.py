@@ -25,8 +25,8 @@ def test_read_many(
         headers=headers,
         params={
             "app": "/org/namespace/app-name",
-            "date:gte": "2021-01-01",
-            "date:lt": "2024-01-01",
+            "date:gte": "2023-01-01",
+            "date:lt": "2026-01-01",
             "$groupby": "day",
             "$limit": 10,
             "$offset": 0,
@@ -80,8 +80,8 @@ def test_read_many_2(
         headers=headers,
         params={
             "app": "/org/namespace/app-name",
-            "date:gte": "2021-01-01",
-            "date:lt": "2024-01-01",
+            "date:gte": "2023-01-01",
+            "date:lt": "2026-01-01",
             "$groupby": "day",
             "$limit": 10,
             "$offset": 0,
@@ -108,8 +108,8 @@ def test_read_many_2(
         headers=headers,
         params={
             "app": "/org/namespace/app-name",
-            "date:gte": "2021-01-01",
-            "date:lt": "2024-01-01",
+            "date:gte": "2023-01-01",
+            "date:lt": "2026-01-01",
             "$groupby": "day",
             "$limit": 10,
             "$offset": 0,
