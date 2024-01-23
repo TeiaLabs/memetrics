@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional, cast
 
 import httpx
-from memetrics.events.schemas import GeneratedFields
+from memetrics_schemas import GeneratedFields
 
 from .errors import MissingAPIKeyError
 from .schemas import EventData, TAuthHeaders

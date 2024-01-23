@@ -19,29 +19,25 @@ def get_optional_requirements() -> dict[str, list[str]]:
     return {name(p): read_multiline_as_list(p) for p in requirements_files}
 
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
-
 requirements = read_multiline_as_list("requirements.txt")
 requirements_extras = get_optional_requirements()
 requirements_extras["all"] = [
     req for extras in requirements_extras.values() for req in extras
 ]
 
+
 setuptools.setup(
-    name="memetrics",
+    name="memetrics_schemas",
     setuptools_git_versioning={
         "enabled": True,
-        "tag_formatter": lambda t: t.replace("v", ""),
+        "tag_formatter": lambda t: t.replace("v", "").replace("p", ""),
         "dev_template": "{tag}.dev",
         "dirty_template": "{tag}.dev",
     },
     setup_requires=["setuptools-git-versioning<2"],
     author="TeiaLabs",
     author_email="contato@teialabs.com",
-    description="Python client to save events to MongoDB.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
+    description="Event schemas used by MeMetrics API and SDKs.",
     url="https://github.com/TeiaLabs/memetrics",
     packages=setuptools.find_packages(),
     python_requires=">=3.11",

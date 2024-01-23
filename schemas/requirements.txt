@@ -1,0 +1,5 @@
+fastapi
+pymongo
+ruson
+pydantic
+email-validator

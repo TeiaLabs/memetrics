@@ -11,11 +11,19 @@ from fastapi import (
     Response,
 )
 from fastapi import status as s
+from memetrics_schemas import (
+    Event,
+    EventData,
+    GeneratedFields,
+    PartialAttribute,
+    PatchEventData,
+    PatchEventExtra,
+    PyObjectId,
+)
 
+from ..utils import parse_sort
 from . import controllers
 from .helpers import help_user_edge_cases
-from .schemas import EventData, GeneratedFields, PatchEventData, Event, PatchEventExtra, PartialAttribute
-from ..utils import PyObjectId, parse_sort
 
 router = APIRouter(tags=["events"])
 
@@ -136,7 +144,9 @@ async def replace_one(
     - 204: overwritten.
     - 404: not found.
     """
-    overwritten, created = controllers.replace_one(identifier, name, body, request.state.creator)
+    overwritten, created = controllers.replace_one(
+        identifier, name, body, request.state.creator
+    )
     if overwritten:
         return Response(status_code=s.HTTP_204_NO_CONTENT)
     if created:

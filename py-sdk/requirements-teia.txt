@@ -1,0 +1,1 @@
+memetrics_schemas @ git+ssh://git@github.com/TeiaLabs/memetrics.git@p1.0.0#subdirectory=schemas

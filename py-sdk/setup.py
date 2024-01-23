@@ -11,18 +11,31 @@ def read_multiline_as_list(file_path: Path | str) -> list[str]:
         return contents
 
 
+def get_optional_requirements() -> dict[str, list[str]]:
+    """Get dict of suffix -> list of requirements."""
+    name = lambda p: p.stem.split("-")[-1]
+
+    requirements_files = Path(".").glob(r"requirements-*.txt")
+    return {name(p): read_multiline_as_list(p) for p in requirements_files}
+
+
 with open("README.md", "r") as f:
     long_description = f.read()
 
 requirements = read_multiline_as_list("requirements.txt")
+requirements_extras = get_optional_requirements()
+requirements_extras["all"] = [
+    req for extras in requirements_extras.values() for req in extras
+]
+
 
 setuptools.setup(
     name="memetrics_sdk",
     setuptools_git_versioning={
         "enabled": True,
-        "tag_formatter": lambda t: t.replace("v", ""),
+        "tag_formatter": lambda t: t.replace("v", "").replace("p", ""),
         "dev_template": "{tag}.dev",
-        "dirty_template": "{tag}.dev"
+        "dirty_template": "{tag}.dev",
     },
     setup_requires=["setuptools-git-versioning<2"],
     author="TeiaLabs",
@@ -34,4 +47,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     python_requires=">=3.11",
     install_requires=requirements,
+    extras_require=requirements_extras,
 )
