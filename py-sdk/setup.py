@@ -33,7 +33,7 @@ setuptools.setup(
     name="memetrics_sdk",
     setuptools_git_versioning={
         "enabled": True,
-        "tag_formatter": lambda t: t.replace("v", ""),
+        "tag_formatter": lambda t: t.replace("v", "").replace("p", ""),
         "dev_template": "{tag}.dev",
         "dirty_template": "{tag}.dev",
     },
