@@ -1,4 +1,7 @@
-from pydantic import BaseSettings
+try:
+    from pydantic import BaseSettings
+except:
+    from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):

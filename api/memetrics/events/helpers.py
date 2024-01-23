@@ -1,6 +1,4 @@
-from tauth.schemas import Creator
-
-from .schemas import EventData, Attribute
+from memetrics_schemas import Attribute, Creator, EventData
 
 
 def help_user_edge_cases(body: EventData, creator: Creator) -> EventData:

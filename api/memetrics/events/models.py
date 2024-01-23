@@ -1,13 +1,11 @@
 from datetime import date, datetime, time
 from typing import Optional
 
+from memetrics_schemas import Event, PyObjectId
 from pydantic import BaseModel, Field
 from pymongo import IndexModel
 from pymongo import operations as pymongo_operations
 from pymongo.database import Database
-
-from ..utils import PyObjectId
-from .schemas import Event
 
 
 class SourceRefs(BaseModel):
@@ -34,7 +32,16 @@ class EventsPerUser(BaseModel):
             IndexModel([("action", 1)]),
             IndexModel([("date", -1)]),
             IndexModel([("user_email", 1)]),
-            IndexModel([("app", 1), ("type", 1), ("action", 1), ("user_email", 1), ("date", 1)], unique=True),  # unique throws error; CAP?
+            IndexModel(
+                [
+                    ("app", 1),
+                    ("type", 1),
+                    ("action", 1),
+                    ("user_email", 1),
+                    ("date", 1),
+                ],
+                unique=True,
+            ),  # unique throws error; CAP?
         ]
 
     @classmethod

@@ -1,21 +1,22 @@
-import inspect
 from typing import Sequence
 
 from bson import ObjectId as BsonObjectId
-from fastapi import BackgroundTasks, HTTPException, status as s
-from pymongo import ReadPreference
-from tauth.schemas import Creator
-
-from ..utils import DB, PyObjectId
-from .models import EventsPerApp, EventsPerUser
-from .schemas import (
+from fastapi import BackgroundTasks, HTTPException
+from fastapi import status as s
+from memetrics_schemas import (
+    Creator,
     Event,
     EventData,
     GeneratedFields,
+    PartialAttribute,
     PatchEventData,
     PatchEventExtra,
-    PartialAttribute,
+    PyObjectId,
 )
+from pymongo import ReadPreference
+
+from ..utils import DB
+from .models import EventsPerUser
 
 
 def create_one(

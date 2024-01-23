@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=60"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["memetrics_schemas"]
+exclude = ["api", "py-sdk", "ts-sdk", "events", "migrations"]
+namespaces = false
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[project]
+version = "1.0.0"
+name = "memetrics_schemas"
+authors = [
+    { name = "TeiaLabs", email = "contato@teialabs.com" }
+]
+description = "Event schemas used by MeMetrics API and SDKs"
+readme = "README.md"
+requires-python= ">=3.11"
+keywords = ["webhooks", "gitlab", "handler"]
+dependencies = [
+    "fastapi",
+    "pymongo",
+    "ruson",
+    "pydantic",
+    "email-validator"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "pytest"
+]

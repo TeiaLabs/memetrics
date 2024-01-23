@@ -1,13 +1,12 @@
-from tauth.dependencies import security
-from redb.core.instance import RedB, MongoConfig
-from pymongo import IndexModel
 from fastapi import FastAPI
+from memetrics_schemas import Event
+from redb.core.instance import MongoConfig, RedB
 from starlette.middleware.cors import CORSMiddleware
+from tauth.dependencies import security
 
+from .events.models import EventsPerUser
 from .settings import Settings
 from .utils import DB
-from .events.schemas import Event
-from .events.models import EventsPerUser
 
 
 def init_cors(app: FastAPI) -> None:
@@ -31,8 +30,8 @@ def init_redb():
         backend="mongo",
         config=MongoConfig(
             database_uri=sets.MEME_MONGODB_URI,
-            default_database=sets.MEME_MONGODB_DBNAME
-        )
+            default_database=sets.MEME_MONGODB_DBNAME,
+        ),
     )
 
 
