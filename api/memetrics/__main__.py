@@ -1,9 +1,12 @@
+import os
+
 import uvicorn
 
 from .settings import Settings
 
 
 def main():
+    print(os.environ)
     settings = Settings()
     uvicorn.run(
         app="memetrics.app:create_app",
