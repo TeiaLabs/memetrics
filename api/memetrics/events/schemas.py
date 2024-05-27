@@ -139,7 +139,7 @@ class Event(BaseModel):
         return obj
 
     class Config:
-        allow_population_by_field_name = True
+        populate_by_name = True
         json_encoders = {PyObjectId: lambda x: {"$oid": str(x)}}
         indices = [
             IndexModel([("created_at", -1)]),
@@ -154,7 +154,6 @@ class GeneratedFields(BaseModel):
     created_by: Creator
 
     class Config:
-        allow_mutation = False
         json_encoders = {PyObjectId: str}
 
 
