@@ -29,7 +29,7 @@ MEMES_MATCH = {
 }
 
 
-def main(dry_run: bool, view_name: str):
+def main(dry_run: bool, view_name: str, delete: bool):
     client = MongoClient(os.environ["MEME_MONGODB_URI"])
     db = client[os.environ["MEME_MONGODB_DBNAME"]]
     if dry_run:
@@ -38,7 +38,8 @@ def main(dry_run: bool, view_name: str):
             print(doc)
         print("Finished inspecting.")
     else:
-        db.drop_collection(view_name)
+        if delete:
+            print(db.drop_collection(view_name))
         res = db.create_collection(
             view_name,
             viewOn="events",
@@ -52,7 +53,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-x", "--execute", action="store_true")
+    parser.add_argument("-d", "--delete", action="store_true")
     parser.add_argument("-n", "--name")
     args = parser.parse_args()
-    # -n athena-flat -x
-    main(dry_run=not args.execute, view_name=args.name)
+    main(dry_run=not args.execute, view_name=args.name, delete=args.delete)
