@@ -88,11 +88,15 @@ FLATTENED_MEMES_VIEW = [
         }
     },
 ]
-JIRA_MEMES_MATCH = {
+MEMES_MATCH = {
     "$match": {
-        "created_by.client_name": "/osf/wingman",
-        "created_by.token_name": "auth0-jwt",
-        "$and": [
+        "data.app": {
+            "$in": [
+                "/osf/allai/vscode/OSFDigital.allai",
+                "/osf/allai_code/vscode/OSFDigital.allai",
+            ]
+        },
+        "$or": [
             {"data.type": {"$ne": "completion"}},
             {"data.action": {"$ne": "request"}},
         ],
@@ -104,7 +108,7 @@ def main(dry_run: bool, view_name: str):
     client = MongoClient(os.environ["MEME_MONGODB_URI"])
     db = client[os.environ["MEME_MONGODB_DBNAME"]]
     if dry_run:
-        cursor = db["events"].aggregate([JIRA_MEMES_MATCH, *FLATTENED_MEMES_VIEW])
+        cursor = db["events"].aggregate([MEMES_MATCH, *FLATTENED_MEMES_VIEW])
         for doc in cursor:
             print(doc)
     else:
@@ -112,7 +116,7 @@ def main(dry_run: bool, view_name: str):
         res = db.create_collection(
             view_name,
             viewOn="events",
-            pipeline=[JIRA_MEMES_MATCH, *FLATTENED_MEMES_VIEW],
+            pipeline=[MEMES_MATCH, *FLATTENED_MEMES_VIEW],
         )
         print(res)
 
@@ -124,5 +128,4 @@ if __name__ == "__main__":
     parser.add_argument("-x", "--execute", action="store_true")
     parser.add_argument("-n", "--name")
     args = parser.parse_args()
-    # -n code-flat -x
     main(dry_run=not args.execute, view_name=args.name)
