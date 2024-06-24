@@ -50,18 +50,6 @@ dotenv.load_dotenv()
 
 FLATTENED_MEMES_VIEW = [
     {
-        "$set": {
-            "data.extra": {
-                "$filter": {
-                    "input": "$data.extra",
-                    "cond": {"$eq": ["$$this.name", "app_id"]},
-                }
-            },
-        }
-    },
-    {"$unwind": "$data.extra"},
-    {"$unwind": "$data.user.extra"},
-    {
         "$project": {
             "created_at": 1,
             "action": "$data.action",
@@ -70,7 +58,24 @@ FLATTENED_MEMES_VIEW = [
             "extra-name": "$data.extra.name",
             "extra-type": "$data.extra.type",
             "extra-value": "$data.extra.value",
-            "organization_name": "$data.user.extra.value",
+            "organization_name": {
+                "$getField": {
+                    "field": "value",
+                    "input": {
+                        "$arrayElemAt": [
+                            {
+                                "$filter": {
+                                    "input": "$data.user.extra",
+                                    "cond": {
+                                        "$eq": ["$$this.name", "organization_name"]
+                                    },
+                                }
+                            },
+                            0,
+                        ]
+                    },
+                }
+            },
             "type": "$data.type",
             "user-email": "$data.user.email",
         }
@@ -78,7 +83,10 @@ FLATTENED_MEMES_VIEW = [
 ]
 MEMES_MATCH = {
     "$match": {
+        "created_by.token_name": {"$nin": ["athena.beta"]},
         "data.app": "/teialabs/athena/api",
+        "data.type": "/ask",
+        "data.action": "post",
     }
 }
 

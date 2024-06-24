@@ -1,6 +1,6 @@
 import json
 
-input_file = "osfdigital.user.jsonl"
+input_file = "osf.user.jsonl"
 output_file = "athena-user_id-to-email.json"
 
 data = {}

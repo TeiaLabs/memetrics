@@ -96,9 +96,14 @@ MEMES_MATCH = {
                 "/osf/allai_code/vscode/OSFDigital.allai",
             ]
         },
-        "$or": [
-            {"data.type": {"$ne": "completion"}},
-            {"data.action": {"$ne": "request"}},
+        "$nor": [
+            {"data.type": "completion", "data.action": "request"},
+            {"data.type": "completion", "data.action": "display"},
+            {"data.type": "chat", "data.action": "request"},
+            {"data.type": "chat", "data.action": "fail"},
+            {"data.type": "docstring", "data.action": "request"},
+            {"data.type": "explanation", "data.action": "request"},
+            {"data.type": "unit_tests", "data.action": "request"},
         ],
     }
 }

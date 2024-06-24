@@ -26,9 +26,7 @@ def batchify_iter(
 
 class Args(Tap):
     batch: int = 4096
-    col: str  # "events"
-    attr: str  # "created_at"
-    date: str  # "2024-08-01"
+    col: str = "events"
 
 
 args = Args().parse_args()
@@ -39,11 +37,12 @@ COLLECTION = args.col
 client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 db_local = MongoClient()["memetrics"]
-filters = {args.attr: {"$gte": datetime.fromisoformat(args.date)}}
-
-input(f"Deleting {filters} from {db.name}/{COLLECTION}. Press enter to continue.")
-res = db[COLLECTION].delete_many(filters)
-print(f"Deleted {res.deleted_count} documents.")
+filters = {
+    "created_at": {
+        "$gte": datetime.fromisoformat("2024-05-01T00:00:00Z"),
+        "$lt": datetime.fromisoformat("2024-06-01T00:00:00Z"),
+    }
+}
 
 count = db_local[COLLECTION].count_documents(filters)
 cursor = db_local[COLLECTION].find(filters)

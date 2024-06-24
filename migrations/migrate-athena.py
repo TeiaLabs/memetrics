@@ -1,41 +1,48 @@
 import json
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 import dotenv
-from tqdm import tqdm
+from pydantic import EmailStr
 from pymongo import MongoClient
+from pymongo.database import Database
+from tqdm import tqdm
+
 from memetrics.events.schemas import Attribute, Creator, Event, EventData, User
 
 dotenv.load_dotenv()
-BATCH_SIZE = 2048
+BATCH_SIZE = 4096
 client = MongoClient(os.environ["MEME_MONGODB_URI"])
 db = client[os.environ["MEME_MONGODB_DBNAME"]]
 collection = db["events"]
 app = "/teialabs/athena/api"
 
-
-def load_jsonl(filepath):
-    with open(filepath, "r") as f:
-        for line in f:
-            yield json.loads(line)
-
-
-def count_file_lines(filepath):
-    with open(filepath, "rb") as f:
-        return sum(1 for _ in f)
-
-
-file = "osfdigital.thread.jsonl"
-data = load_jsonl(file)
-num_lines = count_file_lines(file)
+ATHENA_DB_NAME = os.environ["ATHENA_MONGODB_NAME"]
+data = client[ATHENA_DB_NAME]["thread"].find()
+num_lines = client[ATHENA_DB_NAME]["thread"].count_documents({})
 
 batch = []
 _type = "/ask"
 _action = "post"
-_version = "1.0.0"
+_version = "0.0.0"
 
-mapping = json.load(open("athena-user_id-to-email.json", "r"))
+start_date = datetime(2024, 5, 1, tzinfo=UTC)
+end_date = datetime(2024, 6, 1, tzinfo=UTC)
+
+
+def assemble_user_email_map(db: Database):
+    """Create user ID to email mapping."""
+    objs = db["user"].find()
+    data = {}
+    for obj in objs:
+        employee_id = obj["_id"]
+        email = obj["email"]
+        data[employee_id] = email
+    return data
+
+
+mapping: dict[str, EmailStr] = assemble_user_email_map(client[ATHENA_DB_NAME])
+
 
 def lookup_email(user_id):
     if user_id in mapping:
@@ -44,6 +51,7 @@ def lookup_email(user_id):
     return "unknown@unknown.osf"
 
 
+counter = 0
 for thread in tqdm(data, total=num_lines):
     creator = Creator(
         client_name="/teialabs",
@@ -75,6 +83,12 @@ for thread in tqdm(data, total=num_lines):
     for msg in thread["messages"]:
         if msg["type"] != "query":
             continue
+        if isinstance(msg["created_at"], str):
+            msg["created_at"] = datetime.fromisoformat(msg["created_at"])
+        if not msg["created_at"].tzinfo:
+            msg["created_at"] = msg["created_at"].replace(tzinfo=UTC)
+        if msg["created_at"] <= start_date or msg["created_at"] >= end_date:
+            continue
         extra_ = extra + [
             {
                 "name": "messages.id",
@@ -94,7 +108,11 @@ for thread in tqdm(data, total=num_lines):
                 user=User(
                     email=lookup_email(msg["user_id"]),
                     extra=[
-                        Attribute(name="organization_name", type="string", value="osfdigital"),
+                        Attribute(
+                            name="organization_name",
+                            type="string",
+                            value=ATHENA_DB_NAME,
+                        ),
                     ],
                 ),
             ),
@@ -102,8 +120,12 @@ for thread in tqdm(data, total=num_lines):
         batch.append(memetrics_event.bson())
         if len(batch) == BATCH_SIZE:
             r = collection.insert_many(documents=batch)
+            counter += len(batch)
             batch = []
 
 if batch:
     r = collection.insert_many(documents=batch)
+    counter += len(batch)
     batch = []
+
+print(f"Inserted {counter} events.")
