@@ -25,6 +25,7 @@
 import argparse
 import json
 import os
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
@@ -37,6 +38,11 @@ from tqdm import tqdm
 
 dotenv.load_dotenv()
 MONGODB_URI = os.getenv("MONGODB_URI")
+
+
+def pascal_to_snake(name):
+    snake_case = re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+    return snake_case
 
 
 class EmployeeMonthlyStatus(BaseModel):
@@ -82,8 +88,7 @@ class EmployeeMonthlyStatus(BaseModel):
 
     @classmethod
     def collection_name(cls):
-        # from pascal case to snake case
-        return cls.__name__.replace("([A-Z])", r"_\1").lower()
+        return pascal_to_snake(cls.__name__)
 
 
 indices = [
@@ -116,6 +121,7 @@ def read_jsonl(jsonl_path: Path):
 
 
 def read_json(json_path: Path) -> list[dict]:
+    print("Reading JSON file...")
     with open(json_path, "r") as file:
         jsonified = json.load(file)
         print(f"Read {len(jsonified)} documents.")
@@ -125,6 +131,8 @@ def read_json(json_path: Path) -> list[dict]:
 def insert_from_jsonl(args):
     client = MongoClient(MONGODB_URI)
     db = client[args.db]
+    col_name = repr(EmployeeMonthlyStatus.collection_name())
+    print("Operating on collection: [bold red]" + col_name + "[/bold red]")
     collection = db[EmployeeMonthlyStatus.collection_name()]
     if not args.execute:
         print("Dry run. No data will be inserted.")
@@ -136,6 +144,7 @@ def insert_from_jsonl(args):
             print(f"Deleted {result.deleted_count} documents.")
     insertions = []
     func = read_jsonl if args.path.suffix == ".jsonl" else read_json
+    print("Validating data...")
     for document in tqdm(func(args.path)):
         try:
             obj = EmployeeMonthlyStatus(**document)
@@ -145,6 +154,7 @@ def insert_from_jsonl(args):
             break
         insertions.append(obj.model_dump())
     if args.execute:
+        print("Inserting data...")
         collection.insert_many(insertions)
     print(f"Inserted {len(insertions)} documents.")
     client.close()
@@ -158,9 +168,9 @@ def create_indices(args):
         return
     for index in indices:
         index_spec = [
-            (field[0], ASCENDING if field[1] == 1 else DESCENDING) for field in index
+            (field[0], ASCENDING if field[1] == 1 else DESCENDING) for field in index[0]
         ]
-        index_result = collection.create_index(index_spec)
+        index_result = collection.create_index(index_spec, **index[1])
         print(f"Created index: {index_result}")
     client.close()
 
