@@ -80,10 +80,15 @@ class EmployeeMonthlyStatus(BaseModel):
             return ""
         return value
 
+    @classmethod
+    def collection_name(cls):
+        # from pascal case to snake case
+        return cls.__name__.replace("([A-Z])", r"_\1").lower()
+
 
 indices = [
-    [("upn", 1), ("date_month", -1)],
-    [("date_month", -1)],
+    ([("upn", 1), ("date_month", -1)], {"unique": True}),
+    ([("date_month", -1)], {}),
 ]
 
 
@@ -99,6 +104,7 @@ def read_args():
         "-X", "--execute", action="store_true", help="Execute the script."
     )
     args.add_argument("--create-indexes", action="store_true")
+    args.add_argument("-D", "--delete", action="store_true")
     return args.parse_args()
 
 
@@ -117,11 +123,17 @@ def read_json(json_path: Path) -> list[dict]:
 
 
 def insert_from_jsonl(args):
-    if not args.execute:
-        print("Dry run. No data will be inserted.")
     client = MongoClient(MONGODB_URI)
     db = client[args.db]
-    collection = db[EmployeeMonthlyStatus.__name__]
+    collection = db[EmployeeMonthlyStatus.collection_name()]
+    if not args.execute:
+        print("Dry run. No data will be inserted.")
+    else:
+        if args.delete:
+            num = collection.count_documents({})
+            input(f"Press Enter to confirm deletion of {num} documents: ")
+            result = collection.delete_many({})
+            print(f"Deleted {result.deleted_count} documents.")
     insertions = []
     func = read_jsonl if args.path.suffix == ".jsonl" else read_json
     for document in tqdm(func(args.path)):
@@ -130,9 +142,9 @@ def insert_from_jsonl(args):
         except ValidationError as e:
             print(f"Error: {e}")
             print(document)
-            continue
+            break
         insertions.append(obj.model_dump())
-    if insertions:
+    if args.execute:
         collection.insert_many(insertions)
     print(f"Inserted {len(insertions)} documents.")
     client.close()
@@ -141,7 +153,9 @@ def insert_from_jsonl(args):
 def create_indices(args):
     client = MongoClient(MONGODB_URI)
     db = client[args.db]
-    collection = db[EmployeeMonthlyStatus.__name__]
+    collection = db[EmployeeMonthlyStatus.collection_name()]
+    if not args.create_indexes:
+        return
     for index in indices:
         index_spec = [
             (field[0], ASCENDING if field[1] == 1 else DESCENDING) for field in index
