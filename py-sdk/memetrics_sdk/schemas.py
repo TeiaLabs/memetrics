@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
-from tauth.schemas import Creator
 
 TAuthHeaders = TypedDict(
     "AuthHeaders",
@@ -41,7 +40,7 @@ EventData = TypedDict(
 class GeneratedFields(BaseModel):
     id: Any = Field(..., alias="_id")
     created_at: datetime
-    created_by: Creator
+    created_by: Any
 
     class Config:
         allow_mutation = False
