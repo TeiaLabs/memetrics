@@ -1,37 +1,14 @@
-"""
-"employee_id": 4043,
-"user_email": "sarah.zingelmann@osf.digital",
-"basic_role": "Graphic Designer",
-"country": "Germany",
-"date_of_joining": 1371254400000,
-"department": "Fullstack Commerce DACH",
-"division": "Commerce B2B",
-"experience": "Senior 1",
-"dateMonth": 1719792000000,
-"chat": 3.0,
-"chrome": 0.0,
-"code": 0.0,
-"jira": 0.0,
-"total_events": 3.0,
-"working_days": 6,
-"last_day": "2024-07-08",
-"logged_hours": 4.0,
-"logged_days": 1.0,
-"working_days_employee": 5.0,
-"average daily usage": 0.6,
-"status": "Inactive user"
-"""
-
 import argparse
 import json
 import os
 import re
-from datetime import UTC, datetime
+import pytz
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 import dotenv
-from pydantic import BaseModel, EmailStr, Field, ValidationError, field_validator
+from pydantic import BaseModel, EmailStr, Field, ValidationError
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from rich import print
 from tqdm import tqdm
@@ -74,13 +51,12 @@ class EmployeeMonthlyStatus(BaseModel):
     # computations
     status: (
         Literal[
-            "No AI Used", "Inactive user", "Casual user", "Active user", "Power user"
+            "N/A", "No AI Used", "Inactive user", "Casual user", "Active user", "Power user"
         ]
         | None
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
 
-    @field_validator("experience", mode="before")
     def check_experience(cls, value, values):
         if value == 0.0:
             return ""
@@ -92,7 +68,7 @@ class EmployeeMonthlyStatus(BaseModel):
 
 
 indices = [
-    ([("upn", 1), ("date_month", -1)], {"unique": True}),
+    ([("employee_email", 1), ("date_month", -1)], {"unique": True}),
     ([("date_month", -1)], {}),
 ]
 
@@ -104,12 +80,25 @@ def read_args():
     args.add_argument(
         "-p", "--path", type=Path, help="Path to the JSONL file to insert."
     )
-    args.add_argument("--db", type=str, required=True)
+    args.add_argument(
+        "--db", type=str, required=True
+    )
     args.add_argument(
         "-X", "--execute", action="store_true", help="Execute the script."
     )
-    args.add_argument("--create-indexes", action="store_true")
-    args.add_argument("-D", "--delete", action="store_true")
+    args.add_argument(
+        "-U", "--update", action="store_true", help="Update existing records."
+    )
+    args.add_argument(
+        "--create-indexes", action="store_true"
+    )
+    args.add_argument(
+        "-D", "--delete", action="store_true"
+    )
+    # flag to modify just events for this month
+    args.add_argument(
+        "-M", "--only_this_month", action="store_true"
+    )
     return args.parse_args()
 
 
@@ -144,7 +133,7 @@ def insert_from_jsonl(args):
             print(f"Deleted {result.deleted_count} documents.")
     insertions = []
     func = read_jsonl if args.path.suffix == ".jsonl" else read_json
-    print("Validating data...")
+
     for document in tqdm(func(args.path)):
         try:
             obj = EmployeeMonthlyStatus(**document)
@@ -152,11 +141,30 @@ def insert_from_jsonl(args):
             print(f"Error: {e}")
             print(document)
             break
-        insertions.append(obj.model_dump())
-    if args.execute:
-        print("Inserting data...")
-        collection.insert_many(insertions)
-    print(f"Inserted {len(insertions)} documents.")
+        if args.execute:
+            if args.update:
+                # Update or insert only if date_month is this month
+                if args.only_this_month and obj.date_month.month != datetime.now().month:
+                    continue
+
+                filter_query = {
+                    "employee_email": obj.employee_email,
+                    "date_month": obj.date_month
+                }
+                update_data = {"$set": obj.model_dump()}
+                result = collection.update_one(filter_query, update_data, upsert=True)
+            else:
+                insertions.append(obj.model_dump())
+
+    if args.execute and not args.update:
+        try:
+            print("Inserting data...")
+            result = collection.insert_many(insertions)
+            print(len(result.inserted_ids))
+            print(f"Inserted {len(insertions)} documents.")
+        except Exception as e:
+            print(f"Error inserting document: {e}")
+
     client.close()
 
 
