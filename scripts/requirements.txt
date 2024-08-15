@@ -1,3 +1,9 @@
 pymongo
 pydantic
 rich
+openpyxl
+pandas
+pytz
+mysql-connector-python
+numpy
+tqdm
