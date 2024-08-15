@@ -9,10 +9,9 @@ from datetime import datetime, timedelta
 from decimal import *
 from pandas.tseries.offsets import MonthEnd
 from pydantic import BaseModel, EmailStr, Field, ValidationError
-from pymongo import MongoClient, UpdateOne
-from pymongo import ASCENDING, DESCENDING, MongoClient
+from pymongo import MongoClient
 from tqdm import tqdm
-from typing import Literal
+from typing import Any, Dict, Literal
 
 
 def pascal_to_snake(name):
@@ -198,7 +197,7 @@ class EmployeeDataProcessor:
         employees_df = pd.read_excel(filepath)
         employees_df['dateMonth'] = pd.to_datetime(employees_df[['Year', 'Month']].assign(day=1))
         employees_df = employees_df[
-            (employees_df['dateMonth'] == period) &
+            (employees_df['dateMonth'] >= period) &
             (employees_df['EmployeeStatus'] == 'Active') &
             (~employees_df["EmailID"].isin([
                 "moodle2zoho@osf-global.com",
@@ -247,6 +246,7 @@ class EmployeeMonthlyStatus(BaseModel):
     department: str
     division: str
     experience: str
+    daily_events: Dict[str, Any] | float
     # apps
     chat: int
     chrome: int
@@ -296,13 +296,13 @@ def define_working_days(row):
 def get_class(value):
     if value == 0:
         return 'No AI Used'
-    elif 0 < value < 1:
+    elif 0 < value < 3:
         return 'Inactive user'
-    elif 1 <= value < 3:
+    elif 3 <= value < 8:
         return 'Casual user'
-    elif 3 <= value < 10:
+    elif 8 <= value < 15:
         return 'Active user'
-    elif value >= 10:
+    elif value >= 15:
         return 'Power user'
     else:
         return 'N/A'
@@ -313,8 +313,10 @@ def jira_connection():
         conn = mysql.connector.connect(
             host="jiradb-reporting.ofactory.biz",
             database="jira",
-            user=os.environ.get("JIRA_USER"),
-            password=os.environ.get("JIRA_PASS"),
+            # user=os.environ.get("JIRA_USER"),
+            # password=os.environ.get("JIRA_PASS"),
+            user="rodrigo.barros",
+            password="K8cgkyHngVU+M=tQ",
             port="3306"
         )
     except mysql.connector.Error as e:
@@ -386,6 +388,14 @@ def calculate_avg_usage(df):
         (df['Experience'] == 0.0),
         'Experience'
     ] = ''
+    df.loc[
+        (df['Department'].isna()),
+        'Department'
+    ] = ''
+    df.loc[
+        (df['Division'].isna()),
+        'Division'
+    ] = ''
     df.rename(columns={
         'EmployeeID': 'employee_id',
         'upn': 'user_email',
@@ -397,54 +407,33 @@ def calculate_avg_usage(df):
         'Experience': 'experience'
     }, inplace=True)
     return df
-    # allai_report['working_days_employee'] = allai_report['working_days'] - allai_report['logged_days']
-    # allai_report['average daily usage'] = allai_report['total_events'] / allai_report['working_days_employee']
-    # allai_report.loc[allai_report['working_days_employee'] <= 0, 'average daily usage'] = np.nan
-    
-    # allai_report['status'] = allai_report['average daily usage'].apply(get_class)
-    # allai_report.loc[allai_report['working_days_employee'] <= 0, 'status'] = np.nan
-    # allai_report.loc[
-    #     (allai_report['working_days_employee'] <= 0), 'average daily usage'
-    # ] = 0.0
-    # allai_report.loc[
-    #     (allai_report['working_days_employee'] <= 0), 'status'
-    # ] = "N/A"
-    # allai_report.loc[
-    #     (allai_report['working_days_employee'] <= 0),
-    #     'working_days_employee'
-    # ] = 0
-    # allai_report.loc[
-    #     (allai_report['Experience'] == 0.0),
-    #     'Experience'
-    # ] = ''
-    # allai_report.rename(columns={
-    #     'EmployeeID': 'employee_id',
-    #     'upn': 'user_email',
-    #     'BasicRole': 'basic_role', 
-    #     'Country': 'country', 
-    #     'DateofJoining': 'date_of_joining', 
-    #     'Department': 'department', 
-    #     'Division': 'division', 
-    #     'Experience': 'experience'
-    # }, inplace=True)
-    # return df
 
 
 def compute_allai_status(period):
     df = download_flats(period)
+    df_daily = df.groupby(['user-email', 'dateMonth', 'dateDay'])['events'].sum().fillna(0).reset_index()
+    df_daily['dateDay'] = pd.to_datetime(df_daily['dateDay'])
+    df_daily['dateMonth'] = pd.to_datetime(df_daily['dateMonth'])
+    daily_grouped = df_daily.groupby(['user-email', 'dateMonth']).apply(
+        lambda x: dict(zip(x['dateDay'].dt.strftime('%Y-%m-%d'), x['events']))
+    ).reset_index(name='daily_events')
+    
     df_grouped = df.groupby(['user-email', 'dateMonth', 'product'])['events'].sum().unstack(2).fillna(0).reset_index()
     df_grouped['total_events'] = df_grouped[df['product'].unique()].sum(axis=1)
     df_grouped['dateMonth'] = pd.to_datetime(df_grouped['dateMonth'])
+    df_grouped = df_grouped.merge(daily_grouped, on=['user-email', 'dateMonth'], how='left')
+    df_grouped['daily_events'] = df_grouped['daily_events'].fillna(0)
+
     df_grouped.rename(columns={'user-email':'upn'}, inplace=True)
 
-    employees_df = EmployeeDataProcessor.load_employee_from_file("osf_employees.xlsx", period)
+    employees_df = EmployeeDataProcessor.load_employee_from_file("../resources/osf_employees.xlsx", period)
     allai_report = employees_df.merge(
         df_grouped,
         on=['upn', 'dateMonth'],
         how='left'
     )
     allai_report[['working_days', 'last_day']] = allai_report.apply(define_working_days, axis=1)
-    
+
     conn = jira_connection()
     zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(conn.cursor())
     zoho_leaves_holidays['dateMonth'] = pd.to_datetime(zoho_leaves_holidays['dateMonth'])
@@ -454,14 +443,13 @@ def compute_allai_status(period):
 
 def main():
     if datetime.today().day == 1:
-        period = (datetime.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+        period = (datetime.today() - timedelta(days=1)).replace(day=1).strftime("%Y-%m-%d")
     else:
         period = datetime.today().replace(day=1).strftime("%Y-%m-%d")
 
     print(f"Start: {period}  End: {(datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')}\n")
     
     allai_report = compute_allai_status(period)
-
     client = MongoClient(os.environ["MONGODB_URI"])
     db = client["memetrics"]
     collection = db[EmployeeMonthlyStatus.collection_name()]
@@ -484,7 +472,6 @@ def main():
             print(f"Error updating document: {e}")
             print(document)
             break
-    print(f"Inserted/updated {result.matched_count} documents")
     client.close()
 
 
