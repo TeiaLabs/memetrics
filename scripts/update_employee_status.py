@@ -313,10 +313,8 @@ def jira_connection():
         conn = mysql.connector.connect(
             host="jiradb-reporting.ofactory.biz",
             database="jira",
-            # user=os.environ.get("JIRA_USER"),
-            # password=os.environ.get("JIRA_PASS"),
-            user="rodrigo.barros",
-            password="K8cgkyHngVU+M=tQ",
+            user=os.environ.get("JIRA_USER"),
+            password=os.environ.get("JIRA_PASS"),
             port="3306"
         )
     except mysql.connector.Error as e:
