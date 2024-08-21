@@ -207,6 +207,9 @@ class EmployeeDataProcessor:
             ]))
         ]
         employees_df['upn'] = employees_df['EmailID'].str.lower()
+        employees_df["BasicRole"] = employees_df["BasicRole"].str.replace(
+            " (Junior 0)", "", regex=False
+        )
         return employees_df[['EmployeeID', 'upn', 'BasicRole', 'Country', 'DateofJoining', 'Department', 'Division', 'Experience', 'dateMonth']]
 
 
@@ -263,7 +266,7 @@ class EmployeeMonthlyStatus(BaseModel):
     # computations
     status: (
         Literal[
-            "N/A", "No AI Used", "Inactive user", "Casual user", "Active user", "Power user"
+            "No Status", "No AI Used", "Inactive user", "Casual user", "Active user", "Power user"
         ]
         | None
     )
@@ -305,7 +308,7 @@ def get_class(value):
     elif value >= 15:
         return 'Power user'
     else:
-        return 'N/A'
+        return 'No Status'
 
 
 def jira_connection():
@@ -377,7 +380,7 @@ def calculate_avg_usage(df):
     ] = 0.0
     df.loc[
         (df['working_days_employee'] <= 0), 'status'
-    ] = "N/A"
+    ] = "No Status"
     df.loc[
         (df['working_days_employee'] <= 0),
         'working_days_employee'
