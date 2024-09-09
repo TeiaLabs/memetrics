@@ -151,6 +151,7 @@ class DataProcessor:
         df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
         df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
         df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'code'
         return df
     
@@ -163,6 +164,7 @@ class DataProcessor:
         df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
         df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
         df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'chat'
         return df
     
@@ -171,6 +173,10 @@ class DataProcessor:
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01")
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
         df['user-email'] = df['user-email'].str.lower()
+        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'jira'
         return df
     
@@ -181,6 +187,10 @@ class DataProcessor:
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01") 
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
         df['user-email'] = df['user-email'].str.lower()
+        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
+        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'chrome'
         # Only consider events after the period and 2024-04-01
         df = df[
@@ -330,23 +340,39 @@ def jira_connection():
 def download_flats(period):
     downloader = MongoDBDownloader(os.environ["MONGODB_URI"], period)
     df_code = downloader.download_collection('memetrics', 'code-flat')
-    df_code = DataProcessor.process_code_flat(df_code)
-    df_code_grouped = df_code.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
+    if df_code.empty:
+        df_code = pd.DataFrame()
+        df_code_grouped = pd.DataFrame()
+    else:
+        df_code = DataProcessor.process_code_flat(df_code)
+        df_code_grouped = df_code.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
     print(f"Code data downloaded {df_code.shape[0]} events")
 
     df_chat = downloader.download_collection('memetrics', 'athena-flat')
-    df_chat = DataProcessor.process_chat_flat(df_chat)
-    df_chat_grouped = df_chat.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
+    if df_chat.empty:
+        df_chat = pd.DataFrame()
+        df_chat_grouped = pd.DataFrame()
+    else:
+        df_chat = DataProcessor.process_chat_flat(df_chat)
+        df_chat_grouped = df_chat.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
     print(f"Chat data downloaded {df_chat.shape[0]} events")
 
     df_jira = downloader.download_collection('memetrics', 'jira-flat')
-    df_jira = DataProcessor.process_jira_flat(df_jira)
-    df_jira_grouped = df_jira.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
+    if df_jira.empty:
+        df_jira = pd.DataFrame()
+        df_jira_grouped = pd.DataFrame()
+    else:
+        df_jira = DataProcessor.process_jira_flat(df_jira)
+        df_jira_grouped = df_jira.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
     print(f"Jira data downloaded {df_jira.shape[0]} events")
 
     df_chrome = downloader.download_collection('memetrics', 'chrome-flat')
-    df_chrome = DataProcessor.process_chrome_flat(df_chrome, period)
-    df_chrome_grouped = df_chrome.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
+    if df_chrome.empty:
+        df_chrome = pd.DataFrame()
+        df_chrome_grouped = pd.DataFrame()
+    else:
+        df_chrome = DataProcessor.process_chrome_flat(df_chrome, period)
+        df_chrome_grouped = df_chrome.groupby(['user-email', 'product', 'dateMonth', 'dateDay']).size().reset_index(name='events')
     print(f"Chrome data downloaded {df_chrome.shape[0]} events")
 
     return pd.concat([
@@ -358,18 +384,44 @@ def download_flats(period):
 
 
 def calculate_avg_usage(df):
-    df['code'] = df['code'].fillna(0)
-    df['chat'] = df['chat'].fillna(0)
-    df['jira'] = df['jira'].fillna(0)
-    df['chrome'] = df['chrome'].fillna(0)
-    df['total_events'] = df['total_events'].fillna(0)
-    df['logged_days'] = df['logged_days'].fillna(0)
-    df['logged_hours'] = df['logged_hours'].fillna(0)
-    df['logged_days'] = df['logged_days'].astype(float)
-    df['logged_hours'] = df['logged_hours'].astype(float)
-    df['logged_days'] = df['logged_days'].apply(np.ceil)
+    # test if there is a code column
+    if 'code' in df.columns:
+        df['code'] = df['code'].fillna(0)
+    else:
+        df['code'] = 0
+
+    if 'chat' in df.columns:
+        df['chat'] = df['chat'].fillna(0)
+    else:
+        df['chat'] = 0
+
+    if 'jira' in df.columns:
+        df['jira'] = df['jira'].fillna(0)
+    else:
+        df['jira'] = 0
+
+    if 'chrome' in df.columns:
+        df['chrome'] = df['chrome'].fillna(0)
+    else:
+        df['chrome'] = 0
+
+    if 'total_events' not in df.columns:
+        df['total_events'] = df['total_events'].fillna(0)
+
+    if 'logged_days' not in df.columns:
+        df['logged_days'] = df['logged_days'].fillna(0)
+
+    if 'logged_hours' not in df.columns:
+        df['logged_hours'] = df['logged_hours'].fillna(0)
+        df['logged_hours'] = df['logged_hours'].astype(float)
+    
+    if 'logged_days' not in df.columns:
+        df['logged_days'] = df['logged_days'].fillna(0)
+        df['logged_days'] = df['logged_days'].astype(float)
+        df['logged_days'] = df['logged_days'].apply(np.ceil)
 
     df['working_days_employee'] = df['working_days'] - df['logged_days']
+    df['working_days_employee'] = df['working_days_employee'].astype(float)
     df['average daily usage'] = df['total_events'] / df['working_days_employee']
     df.loc[df['working_days_employee'] <= 0, 'average daily usage'] = np.nan
     
