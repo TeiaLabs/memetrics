@@ -475,8 +475,6 @@ def compute_allai_status(period):
     df_grouped['total_events'] = df_grouped[df['product'].unique()].sum(axis=1)
     df_grouped['dateMonth'] = pd.to_datetime(df_grouped['dateMonth'])
     df_grouped = df_grouped.merge(daily_grouped, on=['user-email', 'dateMonth'], how='left')
-    df_grouped['daily_events'] = df_grouped['daily_events'].fillna(0)
-
     df_grouped.rename(columns={'user-email':'upn'}, inplace=True)
 
     employees_df = EmployeeDataProcessor.load_employee_from_file("../resources/osf_employees.xlsx", period)
@@ -491,6 +489,17 @@ def compute_allai_status(period):
     zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(conn.cursor())
     zoho_leaves_holidays['dateMonth'] = pd.to_datetime(zoho_leaves_holidays['dateMonth'])
     allai_report = allai_report.merge(zoho_leaves_holidays, on=['upn', 'dateMonth'], how='left')
+
+    # fillna with Zero
+    allai_report['code'] = allai_report['code'].fillna(0)
+    allai_report['chat'] = allai_report['chat'].fillna(0)
+    allai_report['chrome'] = allai_report['chrome'].fillna(0)
+    allai_report['jira'] = allai_report['jira'].fillna(0)
+    allai_report['total_events'] = allai_report['total_events'].fillna(0)
+    allai_report['daily_events'] = allai_report['daily_events'].fillna(0)
+    allai_report['logged_hours'] = allai_report['logged_hours'].fillna(0)
+    allai_report['logged_days'] = allai_report['logged_days'].fillna(0)
+
     return calculate_avg_usage(allai_report)
 
 
