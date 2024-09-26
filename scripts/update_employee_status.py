@@ -1,6 +1,8 @@
 import os
 import re
 import pytz
+import pyodbc
+import warnings
 import pandas as pd
 import mysql.connector
 import numpy as np
@@ -12,6 +14,9 @@ from pydantic import BaseModel, EmailStr, Field, ValidationError
 from pymongo import MongoClient
 from tqdm import tqdm
 from typing import Any, Dict, Literal
+
+
+warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 
 
 def pascal_to_snake(name):
@@ -199,28 +204,98 @@ class DataProcessor:
         return df
 
 
-class EmployeeDataProcessor:
-    # TODO: Download data from Zoho or Mongo
+class ZohoEmployee(BaseModel):
+    # keys
+    employee_id: int
+    employee_email: EmailStr = Field(alias="employee_email")
+    # dates
+    date_of_joining: datetime
+    date_month: datetime = Field(alias="date_month")
+    # metadata
+    basic_role: str
+    country: str
+    department: str
+    division: str
+    experience: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
 
+
+class EmployeeDataProcessor:
+
+    @staticmethod
+    def process_employee_data(data, period):
+        data["dateMonth"] = pd.to_datetime(
+            data[["Year", "Month"]].assign(day=1)
+        )
+        data = data[
+            (data['dateMonth'] >= period) &
+            (data['EmployeeStatus'] == 'Active') &
+            ~data["EmailID"].isin(
+                [
+                    "moodle2zoho@osf-global.com",
+                    "zoho2jira@osf.digital",
+                    "zohotest-veronique@osf.digital",
+                    "zoho2jira@osf-global.com",
+                    "zoho.operations@osf-global.com",
+                    "zoho@osf.digital"
+                ]
+            )
+        ]
+        data["EmailID"] = data["EmailID"].str.lower()
+        data["BasicRole"] = data["BasicRole"].str.replace(
+            " (Junior 0)", "", regex=False
+        )
+        data = data.rename(
+            columns={
+                "EmployeeID": "employee_id",
+                "EmailID": "employee_email",
+                "DateofJoining": "date_of_joining",
+                "BasicRole": "basic_role",
+                "Country": "country",
+                "Department": "department",
+                "Division": "division",
+                "Experience": "experience",
+            "dateMonth": "date_month"
+            }
+        )
+        return data[[
+            "employee_id",
+            "employee_email",
+            "basic_role",
+            "country",
+            "date_of_joining",
+            "department",
+            "division",
+            "experience",
+            "date_month"
+        ]]
+        
+        
     @staticmethod
     def load_employee_from_file(filepath, period):
         employees_df = pd.read_excel(filepath)
-        employees_df['dateMonth'] = pd.to_datetime(employees_df[['Year', 'Month']].assign(day=1))
-        employees_df = employees_df[
-            (employees_df['dateMonth'] >= period) &
-            (employees_df['EmployeeStatus'] == 'Active') &
-            (~employees_df["EmailID"].isin([
-                "moodle2zoho@osf-global.com",
-                "zoho2jira@osf.digital",
-                "zohotest-veronique@osf.digital",
-                "zoho2jira@osf-global.com"
-            ]))
-        ]
-        employees_df['upn'] = employees_df['EmailID'].str.lower()
-        employees_df["BasicRole"] = employees_df["BasicRole"].str.replace(
-            " (Junior 0)", "", regex=False
-        )
-        return employees_df[['EmployeeID', 'upn', 'BasicRole', 'Country', 'DateofJoining', 'Department', 'Division', 'Experience', 'dateMonth']]
+        employees_df = EmployeeDataProcessor.process_employee_data(employees_df, period)
+        return employees_df
+    
+    @staticmethod
+    def load_emoloyee_from_MS_db(connection_string, period):
+        try:
+            conn = pyodbc.connect(connection_string)
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT * FROM ZohoEmployees
+                WHERE Year >= 2023
+            """)
+            data = cursor.fetchall()
+            data = [list(row) for row in data]
+
+            columns = [column[0] for column in cursor.description]
+            return EmployeeDataProcessor.process_employee_data(
+                pd.DataFrame(data, columns=columns), period
+            )
+
+        except Exception as e:
+            print("Error trying to connect to MS Employee database:", e)
 
 
 class ZohoDataProcessor:
@@ -241,7 +316,7 @@ class ZohoDataProcessor:
             GROUP BY upn, month
             ORDER BY upn, month
         """)
-        zoho_leaves_holidays = pd.DataFrame(cursor.fetchall(), columns=['upn', 'dateMonth', 'logged_hours'])
+        zoho_leaves_holidays = pd.DataFrame(cursor.fetchall(), columns=['employee_email', 'date_month', 'logged_hours'])
         zoho_leaves_holidays['logged_days'] = zoho_leaves_holidays['logged_hours'] / Decimal('8.0')
         return zoho_leaves_holidays
 
@@ -249,10 +324,10 @@ class ZohoDataProcessor:
 class EmployeeMonthlyStatus(BaseModel):
     # keys
     employee_id: int
-    employee_email: EmailStr = Field(alias="user_email")
+    employee_email: EmailStr = Field(alias="employee_email")
     # dates
     date_of_joining: datetime
-    date_month: datetime = Field(alias="dateMonth")
+    date_month: datetime = Field(alias="date_month")
     # metadata
     basic_role: str
     country: str
@@ -293,14 +368,14 @@ class EmployeeMonthlyStatus(BaseModel):
 
 
 def define_working_days(row):
-    first_day = pd.to_datetime(row['dateMonth'])
-    last_day = (pd.to_datetime(row['dateMonth']) + MonthEnd(0)).strftime('%Y-%m-%d')
+    first_day = pd.to_datetime(row['date_month'])
+    last_day = (pd.to_datetime(row['date_month']) + MonthEnd(0)).strftime('%Y-%m-%d')
     today = datetime.today()
     if first_day.year == today.year and first_day.month == today.month:
         last_day = pd.to_datetime(today - timedelta(days=1))
 
-    if row['DateofJoining'].year == row['dateMonth'].year and row['DateofJoining'].month == row['dateMonth'].month:
-        first_day = pd.to_datetime(row['DateofJoining']).strftime("%Y-%m-%d")
+    if row['date_of_joining'].year == row['date_month'].year and row['date_of_joining'].month == row['date_month'].month:
+        first_day = pd.to_datetime(row['date_of_joining']).strftime("%Y-%m-%d")
 
     working_days = pd.bdate_range(start=first_day, end=last_day).shape[0]
     return pd.Series([working_days, pd.to_datetime(last_day).strftime('%Y-%m-%d')])
@@ -438,27 +513,17 @@ def calculate_avg_usage(df):
         'working_days_employee'
     ] = 0
     df.loc[
-        (df['Experience'] == 0.0),
-        'Experience'
+        (df['experience'] == 0.0),
+        'experience'
     ] = ''
     df.loc[
-        (df['Department'].isna()),
-        'Department'
+        (df['department'].isna()),
+        'department'
     ] = ''
     df.loc[
-        (df['Division'].isna()),
-        'Division'
+        (df['division'].isna()),
+        'division'
     ] = ''
-    df.rename(columns={
-        'EmployeeID': 'employee_id',
-        'upn': 'user_email',
-        'BasicRole': 'basic_role', 
-        'Country': 'country', 
-        'DateofJoining': 'date_of_joining', 
-        'Department': 'department', 
-        'Division': 'division', 
-        'Experience': 'experience'
-    }, inplace=True)
     return df
 
 
@@ -475,20 +540,40 @@ def compute_allai_status(period):
     df_grouped['total_events'] = df_grouped[df['product'].unique()].sum(axis=1)
     df_grouped['dateMonth'] = pd.to_datetime(df_grouped['dateMonth'])
     df_grouped = df_grouped.merge(daily_grouped, on=['user-email', 'dateMonth'], how='left')
-    df_grouped.rename(columns={'user-email':'upn'}, inplace=True)
+    df_grouped.rename(
+        columns={
+            'user-email':'employee_email',
+            'dateMonth': 'date_month'
+        }, 
+    inplace=True)
 
-    employees_df = EmployeeDataProcessor.load_employee_from_file("../resources/osf_employees.xlsx", period)
+    conn_str = (
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        f"SERVER=osftest.database.windows.net;"
+        f"DATABASE=OSFReportingDB;"
+        f"UID={os.environ['MS_USER']};"
+        f"PWD={os.environ['MS_PASS']}"
+    )
+    try:
+        conn = pyodbc.connect(conn_str)
+        print("\nConnection with MS DB was successful")
+        employees_df = EmployeeDataProcessor.load_emoloyee_from_MS_db(conn_str, period)
+    except Exception as e:
+        print(f"Error while connecting to MS DB: {e}")
+        employees_df = EmployeeDataProcessor.load_employee_from_file("../resources/osf_employees.xlsx", period)
+       
     allai_report = employees_df.merge(
         df_grouped,
-        on=['upn', 'dateMonth'],
+        on=['employee_email', 'date_month'],
         how='left'
     )
     allai_report[['working_days', 'last_day']] = allai_report.apply(define_working_days, axis=1)
+    # return data[['EmployeeID', 'upn', 'BasicRole', 'Country', 'DateofJoining', 'Department', 'Division', 'Experience', 'dateMonth']]
 
     conn = jira_connection()
     zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(conn.cursor())
-    zoho_leaves_holidays['dateMonth'] = pd.to_datetime(zoho_leaves_holidays['dateMonth'])
-    allai_report = allai_report.merge(zoho_leaves_holidays, on=['upn', 'dateMonth'], how='left')
+    zoho_leaves_holidays['date_month'] = pd.to_datetime(zoho_leaves_holidays['date_month'])
+    allai_report = allai_report.merge(zoho_leaves_holidays, on=['employee_email', 'date_month'], how='left')
 
     # fillna with Zero
     allai_report['code'] = allai_report['code'].fillna(0)
@@ -500,7 +585,7 @@ def compute_allai_status(period):
     allai_report['logged_hours'] = allai_report['logged_hours'].fillna(0)
     allai_report['logged_days'] = allai_report['logged_days'].fillna(0)
 
-    return calculate_avg_usage(allai_report)
+    return calculate_avg_usage(allai_report), employees_df
 
 
 def main():
@@ -511,11 +596,12 @@ def main():
 
     print(f"Start: {period}  End: {(datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')}\n")
     
-    allai_report = compute_allai_status(period)
+    allai_report, employees_df = compute_allai_status(period)
+
     client = MongoClient(os.environ["MONGODB_URI"])
     db = client["memetrics"]
     collection = db[EmployeeMonthlyStatus.collection_name()]
-
+    print("\nStart updating Monthly Status")
     for document in tqdm(allai_report.to_dict(orient='records')):
         try:
             obj = EmployeeMonthlyStatus(**document)
@@ -530,6 +616,27 @@ def main():
         update_data = {"$set": obj.model_dump()}
         try:
             result = collection.update_one(filter_query, update_data, upsert=True)
+        except Exception as e:
+            print(f"Error updating document: {e}")
+            print(document)
+            break
+
+    zoho_collection = client["memetrics"]['zoho_employee']
+    print("\nStart updating Zoho collection")
+    for document in tqdm(employees_df.to_dict(orient='records')):
+        try:
+            obj = ZohoEmployee(**document)
+        except ValidationError as e:
+            print(f"Error: {e}")
+            print(document)
+            break
+        filter_query = {
+            "employee_email": obj.employee_email,
+            "date_month": obj.date_month
+        }
+        update_data = {"$set": obj.model_dump()}
+        try:
+            result = zoho_collection.update_one(filter_query, update_data, upsert=True)
         except Exception as e:
             print(f"Error updating document: {e}")
             print(document)

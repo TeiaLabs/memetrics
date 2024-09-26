@@ -1,5 +1,6 @@
 pymongo
 pydantic
+pyodbc
 rich
 openpyxl
 pandas
@@ -7,3 +8,4 @@ pytz
 mysql-connector-python
 numpy
 tqdm
+warnings
