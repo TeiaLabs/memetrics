@@ -7,7 +7,7 @@ import pandas as pd
 import mysql.connector
 import numpy as np
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import *
 from pandas.tseries.offsets import MonthEnd
 from pydantic import BaseModel, EmailStr, Field, ValidationError
@@ -217,7 +217,7 @@ class ZohoEmployee(BaseModel):
     department: str
     division: str
     experience: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class EmployeeDataProcessor:
@@ -312,7 +312,7 @@ class ZohoDataProcessor:
                 JOIN cwd_user u ON au.lower_user_name = u.lower_user_name
                 JOIN project p ON ji.PROJECT = p.ID 
             WHERE 
-                wl.STARTDATE >= '2023-07-01' AND wl.STARTDATE < '{datetime.today().strftime('%Y-%m-%d')}' AND p.pkey = 'ZLH'
+                wl.STARTDATE >= '2023-07-01' AND wl.STARTDATE < '{datetime.now(timezone.utc).strftime('%Y-%m-%d')}' AND p.pkey = 'ZLH'
             GROUP BY upn, month
             ORDER BY upn, month
         """)
@@ -370,7 +370,7 @@ class EmployeeMonthlyStatus(BaseModel):
 def define_working_days(row):
     first_day = pd.to_datetime(row['date_month'])
     last_day = (pd.to_datetime(row['date_month']) + MonthEnd(0)).strftime('%Y-%m-%d')
-    today = datetime.today()
+    today = datetime.now(timezone.utc)
     if first_day.year == today.year and first_day.month == today.month:
         last_day = pd.to_datetime(today - timedelta(days=1))
 
@@ -529,6 +529,10 @@ def calculate_avg_usage(df):
 
 def compute_allai_status(period):
     df = download_flats(period)
+    # Filter until yesterday data
+    last_day = (datetime.now(timezone.utc)).strftime('%Y-%m-%d')
+    df = df[df['dateDay'] < last_day]
+
     df_daily = df.groupby(['user-email', 'dateMonth', 'dateDay'])['events'].sum().fillna(0).reset_index()
     df_daily['dateDay'] = pd.to_datetime(df_daily['dateDay'])
     df_daily['dateMonth'] = pd.to_datetime(df_daily['dateMonth'])
@@ -568,7 +572,6 @@ def compute_allai_status(period):
         how='left'
     )
     allai_report[['working_days', 'last_day']] = allai_report.apply(define_working_days, axis=1)
-    # return data[['EmployeeID', 'upn', 'BasicRole', 'Country', 'DateofJoining', 'Department', 'Division', 'Experience', 'dateMonth']]
 
     conn = jira_connection()
     zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(conn.cursor())
@@ -589,15 +592,16 @@ def compute_allai_status(period):
 
 
 def main():
-    if datetime.today().day == 1:
-        period = (datetime.today() - timedelta(days=1)).replace(day=1).strftime("%Y-%m-%d")
+    today = datetime.now(timezone.utc)
+    if today.day == 1:
+        period = (today - timedelta(days=1)).replace(day=1).strftime("%Y-%m-%d")
     else:
-        period = datetime.today().replace(day=1).strftime("%Y-%m-%d")
+        period = today.replace(day=1).strftime("%Y-%m-%d")
 
-    print(f"Start: {period}  End: {(datetime.today() - timedelta(days=1)).strftime('%Y-%m-%d')}\n")
+    print(f"Start: {period}  End: {(today - timedelta(days=1)).strftime('%Y-%m-%d')}\n")
     
     allai_report, employees_df = compute_allai_status(period)
-
+    print("final")
     client = MongoClient(os.environ["MONGODB_URI"])
     db = client["memetrics"]
     collection = db[EmployeeMonthlyStatus.collection_name()]
