@@ -4,7 +4,6 @@ import pytz
 import pyodbc
 import warnings
 import pandas as pd
-import mysql.connector
 import numpy as np
 
 from datetime import datetime, timedelta, timezone
@@ -25,7 +24,7 @@ def pascal_to_snake(name):
 
 
 class MongoDBDownloader:
-    def __init__(self, key, period):
+    def __init__(self, key, period, final_period=None):
         self.client = MongoClient(key)
         self.period = period
         self.code_filters = None
@@ -36,6 +35,7 @@ class MongoDBDownloader:
         self.chat_projection = None
         self.jira_projection = None
         self.chrome_projection = None
+        self.final_period = final_period
         self.set_filters(period)
         self.set_projections()
         
@@ -81,6 +81,11 @@ class MongoDBDownloader:
             "type": "chat.thread.message", 
             "action": "completion"
         }
+        if self.final_period is not None:
+            self.code_filters["created_at"]['$lt'] = datetime.strptime(self.final_period, "%Y-%m-%d")
+            self.chat_filters["created_at"]['$lt'] = datetime.strptime(self.final_period, "%Y-%m-%d") 
+            self.jira_filters["created_at"]['$lt'] = datetime.strptime(self.final_period, "%Y-%m-%d")
+            self.chrome_filters["created_at"]['$lt'] = datetime.strptime(self.final_period, "%Y-%m-%d")
 
     def set_projections(self):
         self.code_projection = {
@@ -153,10 +158,6 @@ class DataProcessor:
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01")
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
         df['user-email'] = df['user-email'].str.lower()
-        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'code'
         return df
     
@@ -164,12 +165,7 @@ class DataProcessor:
     def process_chat_flat(df):
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01") 
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
-
         df['user-email'] = df['user-email'].str.lower()
-        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'chat'
         return df
     
@@ -178,10 +174,6 @@ class DataProcessor:
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01")
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
         df['user-email'] = df['user-email'].str.lower()
-        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'jira'
         return df
     
@@ -192,10 +184,6 @@ class DataProcessor:
         df['dateMonth'] = df['created_at'].dt.strftime("%Y-%m-01") 
         df['dateDay'] = df['created_at'].dt.strftime("%Y-%m-%d")
         df['user-email'] = df['user-email'].str.lower()
-        df['user-email'] = df['user-email'].str.replace("james.bruce@osf.digital", "james-richard.bruce@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
-        df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
         df['product'] = 'chrome'
         # Only consider events after the period and 2024-04-01
         df = df[
@@ -300,24 +288,23 @@ class EmployeeDataProcessor:
 
 class ZohoDataProcessor:
     @staticmethod
-    def define_zoho_leaves(cursor):
-        cursor.execute(f"""
+    def define_zoho_leaves(connection_string):
+        connection = pyodbc.connect(connection_string)
+        query = f"""
             SELECT 
-                LOWER(u.user_name) AS upn, 
-                DATE_FORMAT(wl.STARTDATE, '%Y-%m-01') AS month, 
-                SUM(wl.timeworked / 3600) AS logged_hours
-            FROM jiraissue ji
-                JOIN worklog wl ON ji.id = wl.issueid
-                JOIN app_user au ON wl.author = au.user_key
-                JOIN cwd_user u ON au.lower_user_name = u.lower_user_name
-                JOIN project p ON ji.PROJECT = p.ID 
+                u.user_name AS employee_email, 
+                FORMAT(wl.STARTDATE, 'yyyy-MM-01') AS date_month,
+                wl.timeworked / 3600 AS logged_hours
+            FROM jiradbschema.jiraissue ji
+                JOIN jiradbschema.worklog wl ON ji.id = wl.issueid
+                JOIN jiradbschema.app_user au ON wl.author = au.user_key
+                JOIN jiradbschema.cwd_user u ON au.lower_user_name = u.lower_user_name
+                JOIN jiradbschema.project p ON ji.PROJECT = p.ID 
             WHERE 
-                wl.STARTDATE >= '2023-07-01' AND wl.STARTDATE < '{datetime.now(timezone.utc).strftime('%Y-%m-%d')}' AND p.pkey = 'ZLH'
-            GROUP BY upn, month
-            ORDER BY upn, month
-        """)
-        zoho_leaves_holidays = pd.DataFrame(cursor.fetchall(), columns=['employee_email', 'date_month', 'logged_hours'])
-        zoho_leaves_holidays['logged_days'] = zoho_leaves_holidays['logged_hours'] / Decimal('8.0')
+                wl.STARTDATE >= '2023-07-01'  AND wl.STARTDATE < '{datetime.now(timezone.utc).strftime('%Y-%m-%d')}' AND p.pkey = 'ZLH'
+        """
+        zoho_leaves_holidays = pd.read_sql(query, connection)
+        zoho_leaves_holidays['logged_days'] = zoho_leaves_holidays['logged_hours'] / float('8.0')
         return zoho_leaves_holidays
 
 
@@ -326,7 +313,7 @@ class EmployeeMonthlyStatus(BaseModel):
     employee_id: int
     employee_email: EmailStr = Field(alias="employee_email")
     # dates
-    date_of_joining: datetime
+    date_of_joining: datetime | None
     date_month: datetime = Field(alias="date_month")
     # metadata
     basic_role: str
@@ -369,14 +356,25 @@ class EmployeeMonthlyStatus(BaseModel):
 
 def define_working_days(row):
     first_day = pd.to_datetime(row['date_month'])
-    last_day = (pd.to_datetime(row['date_month']) + MonthEnd(0)).strftime('%Y-%m-%d')
+    last_day = (pd.to_datetime(row['date_month']) + MonthEnd(0))
     today = datetime.now(timezone.utc)
     if first_day.year == today.year and first_day.month == today.month:
         last_day = pd.to_datetime(today - timedelta(days=1))
 
-    if row['date_of_joining'].year == row['date_month'].year and row['date_of_joining'].month == row['date_month'].month:
-        first_day = pd.to_datetime(row['date_of_joining']).strftime("%Y-%m-%d")
+    if row['date_of_joining'] is not None:
+        if row['date_of_joining'].year == row['date_month'].year and row['date_of_joining'].month == row['date_month'].month:
+            first_day = pd.to_datetime(row['date_of_joining'])
 
+    if first_day.tzinfo is None:
+        first_day = first_day.tz_localize('UTC')
+    else:
+        first_day = first_day.astimezone(tz=timezone.utc)
+
+    if last_day.tzinfo is None:
+        last_day = last_day.tz_localize('UTC')
+    else:
+        last_day = last_day.astimezone(tz=timezone.utc)
+    
     working_days = pd.bdate_range(start=first_day, end=last_day).shape[0]
     return pd.Series([working_days, pd.to_datetime(last_day).strftime('%Y-%m-%d')])
 
@@ -396,24 +394,21 @@ def get_class(value):
         return 'No Status'
 
 
-def jira_connection():
-    try: 
-        conn = mysql.connector.connect(
-            host="jiradb-reporting.ofactory.biz",
-            database="jira",
-            user=os.environ.get("JIRA_USER"),
-            password=os.environ.get("JIRA_PASS"),
-            port="3306"
-        )
-    except mysql.connector.Error as e:
-        print(e)
-        return
-    
-    return conn
+def msserver_connection():
+    # Configurações de conexão
+    conn_str = (
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        f"SERVER=jiradb.osf.systems,"
+        f"1433;"
+        f"DATABASE=jira;"
+        f"UID=christian.quevedo;"
+        f"PWD={os.environ['MSJIRA_PASS']}"
+    )
+    return conn_str
 
 
-def download_flats(period):
-    downloader = MongoDBDownloader(os.environ["MONGODB_URI"], period)
+def download_flats(period, final_period=None):
+    downloader = MongoDBDownloader(os.environ["MONGODB_URI"], period, final_period)
     df_code = downloader.download_collection('memetrics', 'code-flat')
     if df_code.empty:
         df_code = pd.DataFrame()
@@ -527,11 +522,16 @@ def calculate_avg_usage(df):
     return df
 
 
-def compute_allai_status(period):
-    df = download_flats(period)
+def compute_allai_status(period, final_period=None):
+    df = download_flats(period, final_period)
     # Filter until yesterday data
     last_day = (datetime.now(timezone.utc)).strftime('%Y-%m-%d')
     df = df[df['dateDay'] < last_day]
+    # Fix James Bruce, rhea.duggal, aissa.aldridge, mike.chase cases
+    df['user-email'] = df['user-email'].str.replace("james-richard.bruce@osf.digital", "james.bruce@osf.digital", regex=False)
+    df['user-email'] = df['user-email'].str.replace("rhea.duggal@osf.digital", "pallavi.duggal@osf.digital", regex=False)
+    df['user-email'] = df['user-email'].str.replace("aissa.aldridge@osf.digital", "aissa.gequillo@osf.digital", regex=False)
+    df['user-email'] = df['user-email'].str.replace("mike.chase@osf.digital", "michael.chase@osf.digital", regex=False)
 
     df_daily = df.groupby(['user-email', 'dateMonth', 'dateDay'])['events'].sum().fillna(0).reset_index()
     df_daily['dateDay'] = pd.to_datetime(df_daily['dateDay'])
@@ -565,7 +565,10 @@ def compute_allai_status(period):
     except Exception as e:
         print(f"Error while connecting to MS DB: {e}")
         employees_df = EmployeeDataProcessor.load_employee_from_file("../resources/osf_employees.xlsx", period)
-       
+    
+    # Fix James Bruce case
+    employees_df['employee_email'] = employees_df['employee_email'].str.replace("james-richard.bruce@osf.digital", "james.bruce@osf.digital", regex=False)
+
     allai_report = employees_df.merge(
         df_grouped,
         on=['employee_email', 'date_month'],
@@ -573,9 +576,10 @@ def compute_allai_status(period):
     )
     allai_report[['working_days', 'last_day']] = allai_report.apply(define_working_days, axis=1)
 
-    conn = jira_connection()
-    zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(conn.cursor())
+    connection_string = msserver_connection()
+    zoho_leaves_holidays = ZohoDataProcessor.define_zoho_leaves(connection_string)
     zoho_leaves_holidays['date_month'] = pd.to_datetime(zoho_leaves_holidays['date_month'])
+    zoho_leaves_holidays = zoho_leaves_holidays.groupby(['employee_email', 'date_month'])[['logged_days', 'logged_hours']].sum().reset_index()
     allai_report = allai_report.merge(zoho_leaves_holidays, on=['employee_email', 'date_month'], how='left')
 
     # fillna with Zero
@@ -600,12 +604,27 @@ def main():
 
     print(f"Start: {period}  End: {(today - timedelta(days=1)).strftime('%Y-%m-%d')}\n")
     
-    allai_report, employees_df = compute_allai_status(period)
-    print("final")
+    # period = "2024-06-01"
+    final_period = "2024-10-01"
+
+    allai_report, employees_df = compute_allai_status(period, final_period)
+
+    allai_report = allai_report[
+        allai_report['date_month'].between(period, final_period)
+    ]
+    employees_df = employees_df[
+        employees_df['date_month'].between(period, final_period)
+    ]
+
+    allai_report = allai_report[
+        allai_report['employee_email'].isin(employees_df['employee_email'].unique())
+    ]
     client = MongoClient(os.environ["MONGODB_URI"])
     db = client["memetrics"]
     collection = db[EmployeeMonthlyStatus.collection_name()]
     print("\nStart updating Monthly Status")
+    allai_report.to_excel("allai_report.xlsx", index=False)
+
     for document in tqdm(allai_report.to_dict(orient='records')):
         try:
             obj = EmployeeMonthlyStatus(**document)
