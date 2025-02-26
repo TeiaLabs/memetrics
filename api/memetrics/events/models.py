@@ -34,7 +34,16 @@ class EventsPerUser(BaseModel):
             IndexModel([("action", 1)]),
             IndexModel([("date", -1)]),
             IndexModel([("user_email", 1)]),
-            IndexModel([("app", 1), ("type", 1), ("action", 1), ("user_email", 1), ("date", 1)], unique=True),  # unique throws error; CAP?
+            IndexModel(
+                [
+                    ("app", 1),
+                    ("type", 1),
+                    ("action", 1),
+                    ("user_email", 1),
+                    ("date", 1),
+                ],
+                unique=True,
+            ),  # unique throws error; CAP?
         ]
 
     @classmethod
@@ -50,9 +59,6 @@ class EventsPerUser(BaseModel):
             filter=filters,
             update={
                 "$inc": {"count": 1},
-                "$push": {
-                    "events": {"event_id": event.id, "event_creation": event.created_at}
-                },
             },
             upsert=True,
         )
@@ -77,12 +83,6 @@ class EventsPerUser(BaseModel):
             }
             update = {
                 "$inc": {"count": 1},
-                "$push": {
-                    "events": {
-                        "event_id": event.id,
-                        "event_creation": event.created_at,
-                    }
-                },
             }
             operations.append(
                 pymongo_operations.UpdateOne(
