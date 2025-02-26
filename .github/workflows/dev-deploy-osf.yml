@@ -13,7 +13,7 @@ env:
   AWS_SECRET_ACCESS_KEY: ${{ secrets.OSF_AWS_SECRET_ACCESS_KEY }}
   AWS_DEFAULT_REGION: us-east-1
 
-  ECS_CLUSTER: default-beta
+  ECS_CLUSTER: allai-staging-services
   ECS_SERVICE: memetrics-beta
   REPOSITORY: 147431826892.dkr.ecr.us-east-1.amazonaws.com/memetrics-beta
   IMAGE_TAG: beta
