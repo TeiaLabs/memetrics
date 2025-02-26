@@ -1,4 +1,4 @@
-name: prod-deploy
+name: osf-prod-deploy
 
 on:
     push:
