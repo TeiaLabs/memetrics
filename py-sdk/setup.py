@@ -14,7 +14,7 @@ def read_multiline_as_list(file_path: Path | str) -> list[str]:
 with open("README.md", "r") as f:
     long_description = f.read()
 
-requirements = read_multiline_as_list("requirements.txt")
+# requirements = read_multiline_as_list("requirements.txt")
 
 setuptools.setup(
     name="memetrics_sdk",
@@ -33,5 +33,5 @@ setuptools.setup(
     url="https://github.com/TeiaLabs/memetrics",
     packages=setuptools.find_packages(),
     python_requires=">=3.11",
-    install_requires=requirements,
+    install_requires=["fastapi", "pydantic", "python-dotenv", "httpx"],
 )
