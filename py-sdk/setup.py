@@ -24,7 +24,7 @@ setuptools.setup(
         "dev_template": "{tag}.dev",
         "dirty_template": "{tag}.dev"
     },
-    setup_requires=["setuptools-git-versioning<2"],
+    setup_requires=["setuptools-git-versioning<2", "wheel"],
     author="TeiaLabs",
     author_email="contato@teialabs.com",
     description="Python client to save events to MongoDB.",
