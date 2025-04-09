@@ -14,7 +14,7 @@ def read_multiline_as_list(file_path: Path | str) -> list[str]:
 with open("README.md", "r") as f:
     long_description = f.read()
 
-# requirements = read_multiline_as_list("requirements.txt")
+requirements = read_multiline_as_list("requirements.txt")
 
 setuptools.setup(
     name="memetrics_sdk",
@@ -24,7 +24,7 @@ setuptools.setup(
         "dev_template": "{tag}.dev",
         "dirty_template": "{tag}.dev"
     },
-    setup_requires=["setuptools-git-versioning<2", "wheel"],
+    setup_requires=["setuptools-git-versioning<2"],
     author="TeiaLabs",
     author_email="contato@teialabs.com",
     description="Python client to save events to MongoDB.",
@@ -33,5 +33,5 @@ setuptools.setup(
     url="https://github.com/TeiaLabs/memetrics",
     packages=setuptools.find_packages(),
     python_requires=">=3.11",
-    install_requires=["fastapi", "pydantic", "python-dotenv", "httpx"],
+    install_requires=requirements,
 )
