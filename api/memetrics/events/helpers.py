@@ -7,8 +7,7 @@ def help_user_edge_cases(body: EventData, creator: Creator) -> EventData:
     if not body.user.get("email"):
         body.user["email"] = creator.user_email
 
-    if not body.user["extra"]:
-        body.user["extra"] = []
+    extra = body.user.setdefault("extra", [])
 
     body.user["extra"].append(
         Attribute(
