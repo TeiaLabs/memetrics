@@ -9,7 +9,7 @@ def help_user_edge_cases(body: EventData, creator: Creator) -> EventData:
 
     extra = body.user.setdefault("extra", [])
 
-    body.user["extra"].append(
+    extra.append(
         Attribute(
             name="ip_address",
             type="string",
